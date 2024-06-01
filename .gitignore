@@ -51,8 +51,8 @@ extern/codegen/
 log.txt
 *.log
 
-# QPM Stuffs
-qpm.shared.json
+# QPM Stuffs uncomment suggested by QPM
+# qpm.shared.json
 extern/
 Android.mk.backup
 

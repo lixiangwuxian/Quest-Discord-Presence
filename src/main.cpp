@@ -42,40 +42,46 @@ using namespace GlobalNamespace;
 #include "presencemanager.hpp"
 
 static ModInfo modInfo;
-static Configuration& getConfig() {
+static Configuration &getConfig()
+{
     static Configuration config(modInfo);
     return config;
 }
 
-static Logger& getLogger() {
-    static Logger* logger = new Logger(modInfo);
+static Logger &getLogger()
+{
+    static Logger *logger = new Logger(modInfo);
     return *logger;
 }
-static PresenceManager* presenceManager = nullptr;
+static PresenceManager *presenceManager = nullptr;
 static LevelInfo selectedLevel;
 
 // Converts the int representing an IBeatmapDifficulty into a string
-std::string difficultyToString(BeatmapDifficulty difficulty)  {
-    switch(difficulty)  {
-        case BeatmapDifficulty::Easy:
-            return "Easy";
-        case BeatmapDifficulty::Normal:
-            return "Normal";
-        case BeatmapDifficulty::Hard:
-            return "Hard";
-        case BeatmapDifficulty::Expert:
-            return "Expert";
-        case BeatmapDifficulty::ExpertPlus:
-            return "Expert+";
+std::string difficultyToString(BeatmapDifficulty difficulty)
+{
+    switch (difficulty)
+    {
+    case BeatmapDifficulty::Easy:
+        return "Easy";
+    case BeatmapDifficulty::Normal:
+        return "Normal";
+    case BeatmapDifficulty::Hard:
+        return "Hard";
+    case BeatmapDifficulty::Expert:
+        return "Expert";
+    case BeatmapDifficulty::ExpertPlus:
+        return "Expert+";
     }
     return "Unknown";
 }
 
 // Define the current level by finding info from the IBeatmapLevel object
-MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView* self) {
+MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView *self)
+{
     StandardLevelDetailView_RefreshContent(self);
-    IPreviewBeatmapLevel* level = reinterpret_cast<IPreviewBeatmapLevel*>(self->level);
-    if(!level) {
+    IPreviewBeatmapLevel *level = reinterpret_cast<IPreviewBeatmapLevel *>(self->level);
+    if (!level)
+    {
         return;
     }
 
@@ -88,34 +94,24 @@ MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView
 static int currentFrame = -1;
 
 // Called when starting a non-multiplayer level
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (MenuTransitionsHelper::*)(
-        Il2CppString*,
-        IDifficultyBeatmap*,
-        IPreviewBeatmapLevel*,
-        OverrideEnvironmentSettings*,
-        ColorScheme*,
-        GameplayModifiers*,
-        PlayerSpecificSettings*,
-        PracticeSettings*,
-        Il2CppString*,
-        bool,
-        System::Action*,
-        System::Action_2<StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*>*)>(&MenuTransitionsHelper::StartStandardLevel),
-        void,
-        MenuTransitionsHelper* self,
-        Il2CppString* gameMode,
-        IDifficultyBeatmap* difficultyBeatmap,
-        IPreviewBeatmapLevel* previewBeatmapLevel,
-        OverrideEnvironmentSettings* overrideEnvironmentSettings,
-        ColorScheme* overrideColorScheme,
-        GameplayModifiers* gameplayModifiers,
-        PlayerSpecificSettings* playerSpecificSettings,
-        PracticeSettings* practiceSettings,
-        Il2CppString* backButtonText,
-        bool useTestNoteCutCountEffects,
-        System::Action* beforeSceneSwitchCallback,
-        System::Action_2<StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*>* levelFinishedCallback) {
-            getLogger().info("Song Started");
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (MenuTransitionsHelper::*)(::StringW, ::GlobalNamespace::IDifficultyBeatmap *, ::GlobalNamespace::IPreviewBeatmapLevel *, ::GlobalNamespace::OverrideEnvironmentSettings *, ::GlobalNamespace::ColorScheme *, ::GlobalNamespace::GameplayModifiers *, ::GlobalNamespace::PlayerSpecificSettings *, ::GlobalNamespace::PracticeSettings *, ::StringW, bool, bool, ::System::Action *, ::System::Action_2<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *, ::System::Action_2<::GlobalNamespace::LevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *)>(&MenuTransitionsHelper::StartStandardLevel),void,
+                MenuTransitionsHelper *self,
+                ::StringW gameMode,
+                ::GlobalNamespace::IDifficultyBeatmap *difficultyBeatmap,
+                ::GlobalNamespace::IPreviewBeatmapLevel *previewBeatmapLevel,
+                ::GlobalNamespace::OverrideEnvironmentSettings *overrideEnvironmentSettings,
+                ::GlobalNamespace::ColorScheme *overrideColorScheme,
+                ::GlobalNamespace::GameplayModifiers *gameplayModifiers,
+                ::GlobalNamespace::PlayerSpecificSettings *playerSpecificSettings,
+                ::GlobalNamespace::PracticeSettings *practiceSettings,
+                ::StringW backButtonText,
+                bool useTestNoteCutCountEffects,
+                bool startPaused,
+                ::System::Action *beforeSceneSwitchCallback,
+                ::System::Action_2<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *levelFinishedCallback,
+                ::System::Action_2<::GlobalNamespace::LevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *levelRestartedCallback)
+{
+    getLogger().info("Song Started");
     currentFrame = -1;
     BeatmapDifficulty difficulty = difficultyBeatmap->get_difficulty();
     selectedLevel.selectedDifficulty = difficultyToString(difficulty);
@@ -125,7 +121,8 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (Menu
     presenceManager->playingLevel.emplace(selectedLevel);
     presenceManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
 
-    if(presenceManager->isPractice) {
+    if (presenceManager->isPractice)
+    {
         getLogger().info("Practice mode is enabled!");
     }
     presenceManager->statusLock.unlock();
@@ -142,301 +139,305 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (Menu
         practiceSettings,
         backButtonText,
         useTestNoteCutCountEffects,
+        startPaused,
         beforeSceneSwitchCallback,
-        levelFinishedCallback
-    );
+        levelFinishedCallback,
+        levelRestartedCallback);
 }
 
 // Called when starting a multiplayer level
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel,  static_cast<void (MenuTransitionsHelper::*)(
-    Il2CppString*,
-    IPreviewBeatmapLevel*,
-    BeatmapDifficulty,
-    BeatmapCharacteristicSO*,
-    IDifficultyBeatmap*,
-    ColorScheme*,
-    GameplayModifiers*,
-    PlayerSpecificSettings*,
-    PracticeSettings*,
-    Il2CppString*,
-    bool,
-    System::Action*,
-    System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO*, MultiplayerResultsData*>*,
-    System::Action_1<DisconnectedReason>*)>(&MenuTransitionsHelper::StartMultiplayerLevel), void,
-    MenuTransitionsHelper* self,
-    Il2CppString* gameMode,
-    IPreviewBeatmapLevel* previewBeatmapLevel,
-    BeatmapDifficulty beatmapDifficulty,
-    BeatmapCharacteristicSO* beatmapCharacteristic,
-    IDifficultyBeatmap* difficultyBeatmap,
-    ColorScheme* overrideColorScheme,
-    GameplayModifiers* gameplayModifiers,
-    PlayerSpecificSettings* playerSpecificSettings,
-    PracticeSettings* practiceSettings,
-    Il2CppString* backButtonText,
-    bool useTestNoteCutSoundEffects,
-    System::Action* beforeSceneSwitchCallback,
-    System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO*, MultiplayerResultsData*>* levelFinishedCallback,
-    System::Action_1<DisconnectedReason>* didDisconnectCallback) {
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<void (MenuTransitionsHelper::*)(::StringW, IPreviewBeatmapLevel *, BeatmapDifficulty, BeatmapCharacteristicSO *, IDifficultyBeatmap *, ColorScheme *, GameplayModifiers *, PlayerSpecificSettings *, PracticeSettings *, ::StringW, bool, System::Action *, System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO *, MultiplayerResultsData *> *, System::Action_1<DisconnectedReason> *)>(&MenuTransitionsHelper::StartMultiplayerLevel), void,
+                MenuTransitionsHelper *self,
+                ::StringW gameMode, 
+                ::GlobalNamespace::IPreviewBeatmapLevel *previewBeatmapLevel, 
+                ::GlobalNamespace::BeatmapDifficulty beatmapDifficulty, 
+                ::GlobalNamespace::BeatmapCharacteristicSO *beatmapCharacteristic, 
+                ::GlobalNamespace::IDifficultyBeatmap *difficultyBeatmap, 
+                ::GlobalNamespace::ColorScheme *overrideColorScheme, 
+                ::GlobalNamespace::GameplayModifiers *gameplayModifiers, 
+                ::GlobalNamespace::PlayerSpecificSettings *playerSpecificSettings, 
+                ::GlobalNamespace::PracticeSettings *practiceSettings, 
+                ::StringW backButtonText, 
+                bool useTestNoteCutSoundEffects, 
+                ::System::Action *beforeSceneSwitchCallback, 
+                ::System::Action_2<::GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::MultiplayerResultsData *> *levelFinishedCallback, 
+                ::System::Action_1<::GlobalNamespace::DisconnectedReason> *didDisconnectCallback)
+                {
 
-    getLogger().info("Multiplayer Song Started");
-    selectedLevel.selectedDifficulty = difficultyToString(beatmapDifficulty);
-    presenceManager->statusLock.lock();
-    presenceManager->playingLevel.emplace(selectedLevel);
-    presenceManager->statusLock.unlock();
-    
-    MenuTransitionsHelper_StartMultiplayerLevel(
-        self,
-        gameMode,
-        previewBeatmapLevel,
-        beatmapDifficulty,
-        beatmapCharacteristic,
-        difficultyBeatmap,
-        overrideColorScheme,
-        gameplayModifiers,
-        playerSpecificSettings,
-        practiceSettings,
-        backButtonText,
-        useTestNoteCutSoundEffects,
-        beforeSceneSwitchCallback,
-        levelFinishedCallback,
-        didDisconnectCallback
-    );
-}
+                    getLogger().info("Multiplayer Song Started");
+                    selectedLevel.selectedDifficulty = difficultyToString(beatmapDifficulty);
+                    presenceManager->statusLock.lock();
+                    presenceManager->playingLevel.emplace(selectedLevel);
+                    presenceManager->statusLock.unlock();
 
-void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager* multiplayerSessionManager, Il2CppString* userId) {
-    presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1;
-    presenceManager->statusLock.unlock();
-}
+                    MenuTransitionsHelper_StartMultiplayerLevel(
+                        self,
+                        gameMode,
+                        previewBeatmapLevel,
+                        beatmapDifficulty,
+                        beatmapCharacteristic,
+                        difficultyBeatmap,
+                        overrideColorScheme,
+                        gameplayModifiers,
+                        playerSpecificSettings,
+                        practiceSettings,
+                        backButtonText,
+                        useTestNoteCutSoundEffects,
+                        beforeSceneSwitchCallback,
+                        levelFinishedCallback,
+                        didDisconnectCallback);
+                }
 
-// Reset the lobby back to null when we leave back to the menu
-void onLobbyDisconnect() {
-    getLogger().info("Left Multiplayer lobby");
-    presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby = std::nullopt;
-    presenceManager->statusLock.unlock();
-}
+                void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager *multiplayerSessionManager, ::StringW userId)
+                {
+                    presenceManager->statusLock.lock();
+                    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1;
+                    presenceManager->statusLock.unlock();
+                }
 
-MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlowCoordinator::DidActivate, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {    
-    getLogger().info("Joined multiplayer lobby");
+                // Reset the lobby back to null when we leave back to the menu
+                void onLobbyDisconnect()
+                {
+                    getLogger().info("Left Multiplayer lobby");
+                    presenceManager->statusLock.lock();
+                    presenceManager->multiplayerLobby = std::nullopt;
+                    presenceManager->statusLock.unlock();
+                }
 
-    // TODO avoid FindObjectsOfTypeAll calls if possible
-    // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
+                MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlowCoordinator::DidActivate, void, GameServerLobbyFlowCoordinator *self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
+                {
+                    getLogger().info("Joined multiplayer lobby");
 
-    
-    // Used for updating current player count in the DidChange event
-    LobbyPlayersDataModel* lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel*>(self->lobbyPlayersDataModel);
-    
-    // Used for getting max player count
-    // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
-    IMultiplayerSessionManager* sessionManager = lobbyPlayersDataModel->multiplayerSessionManager;
+                    // TODO avoid FindObjectsOfTypeAll calls if possible
+                    // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
 
-    int maxPlayers = sessionManager->get_maxPlayerCount();
-    int numActivePlayers = sessionManager->get_connectedPlayerCount();
+                    // Used for updating current player count in the DidChange event
+                    LobbyPlayersDataModel *lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel *>(self->lobbyPlayersDataModel);
 
-    // Set the number of players in this lobby
-    MultiplayerLobbyInfo lobbyInfo;
-    lobbyInfo.numberOfPlayers = numActivePlayers + 1;
-    lobbyInfo.maxPlayers = maxPlayers;
-    presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby.emplace(lobbyInfo);
-    presenceManager->statusLock.unlock();
-    
-    // Used to update player count
-    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<Il2CppString*>*>(classof(System::Action_1<Il2CppString*>*), sessionManager, handleLobbyPlayersDataModelDidChange));
+                    // Used for getting max player count
+                    // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
+                    IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->multiplayerSessionManager;
 
-    // Register disconnect from lobby event
-    sessionManager->add_disconnectedEvent(
-        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason>*>(classof(System::Action_1<GlobalNamespace::DisconnectedReason>*), static_cast<Il2CppObject*>(nullptr), onLobbyDisconnect)
-    );
+                    int maxPlayers = sessionManager->get_maxPlayerCount();
+                    int numActivePlayers = sessionManager->get_connectedPlayerCount();
 
-    GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
-}
+                    // Set the number of players in this lobby
+                    MultiplayerLobbyInfo lobbyInfo;
+                    lobbyInfo.numberOfPlayers = numActivePlayers + 1;
+                    lobbyInfo.maxPlayers = maxPlayers;
+                    presenceManager->statusLock.lock();
+                    presenceManager->multiplayerLobby.emplace(lobbyInfo);
+                    presenceManager->statusLock.unlock();
 
-// Called on standard level end
-MAKE_HOOK_MATCH(StandardLevelGameplayManager_OnDestroy, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
-    getLogger().info("Song Ended");
-    presenceManager->statusLock.lock();
-    presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
-    presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
-    presenceManager->statusLock.unlock();
-    StandardLevelGameplayManager_OnDestroy(self);
-}
+                    // Used to update player count
+                    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<::StringW> *>(classof(System::Action_1<::StringW> *), sessionManager, handleLobbyPlayersDataModelDidChange));
 
-// Called on multiplayer level end
-MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerGameplayManager_OnDisable, &MultiplayerLocalActivePlayerGameplayManager::OnDisable, void, MultiplayerLocalActivePlayerGameplayManager* self) {
-    getLogger().info("Multiplayer Song Ended");
-    presenceManager->statusLock.lock();
-    presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
-    presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
-    presenceManager->statusLock.unlock();
-    MultiplayerLocalActivePlayerGameplayManager_OnDisable(self);
-}
+                    // Register disconnect from lobby event
+                    sessionManager->add_disconnectedEvent(
+                        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(classof(System::Action_1<GlobalNamespace::DisconnectedReason> *), static_cast<Il2CppObject *>(nullptr), onLobbyDisconnect));
 
-// Called on tutorial start
-MAKE_HOOK_MATCH(TutorialSongController_Awake, &TutorialSongController::Awake, void, TutorialSongController* self)   {
-    getLogger().info("Tutorial starting");
-    presenceManager->statusLock.lock();
-    presenceManager->playingTutorial = true;
-    presenceManager->statusLock.unlock();
-    TutorialSongController_Awake(self);
-}
+                    GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
+                }
 
-MAKE_HOOK_MATCH(TutorialSongController_OnDestroy, &TutorialSongController::OnDestroy, void, TutorialSongController* self)   {
-    getLogger().info("Tutorial ending");
-    presenceManager->statusLock.lock();
-    presenceManager->playingTutorial = false;
-    presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
-    presenceManager->statusLock.unlock();
-    TutorialSongController_OnDestroy(self);
-}
+                // Called on standard level end
+                MAKE_HOOK_MATCH(StandardLevelGameplayManager_OnDestroy, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager *self)
+                {
+                    getLogger().info("Song Ended");
+                    presenceManager->statusLock.lock();
+                    presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
+                    presenceManager->paused = false;              // If we are pasued, unpause us, since we are returning to the menu
+                    presenceManager->statusLock.unlock();
+                    StandardLevelGameplayManager_OnDestroy(self);
+                }
 
-MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init, &MissionLevelScenesTransitionSetupDataSO::Init, void,
-    MissionLevelScenesTransitionSetupDataSO* self,
-    Il2CppString* missionId,
-    GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap,
-    GlobalNamespace::IPreviewBeatmapLevel* previewBeatmapLevel,
-    Array<GlobalNamespace::MissionObjective*>* missionObjectives,
-    GlobalNamespace::ColorScheme* overrideColorScheme,
-    GlobalNamespace::GameplayModifiers* gameplayModifiers,
-    GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
-    Il2CppString* backButtonText)   {
-    getLogger().info("Campaign level starting");
-    currentFrame = -1;
-    presenceManager->statusLock.lock();
-    presenceManager->playingCampaign = true;
-    presenceManager->statusLock.unlock();
+                // Called on multiplayer level end
+                MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerGameplayManager_OnDisable, &MultiplayerLocalActivePlayerGameplayManager::OnDisable, void, MultiplayerLocalActivePlayerGameplayManager *self)
+                {
+                    getLogger().info("Multiplayer Song Ended");
+                    presenceManager->statusLock.lock();
+                    presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
+                    presenceManager->paused = false;              // If we are pasued, unpause us, since we are returning to the menu
+                    presenceManager->statusLock.unlock();
+                    MultiplayerLocalActivePlayerGameplayManager_OnDisable(self);
+                }
 
-    MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
-}
+                // Called on tutorial start
+                MAKE_HOOK_MATCH(TutorialSongController_Awake, &TutorialSongController::Awake, void, TutorialSongController *self)
+                {
+                    getLogger().info("Tutorial starting");
+                    presenceManager->statusLock.lock();
+                    presenceManager->playingTutorial = true;
+                    presenceManager->statusLock.unlock();
+                    TutorialSongController_Awake(self);
+                }
 
-// Called upon mission levels (campaign levels) ending.
-MAKE_HOOK_MATCH(MissionLevelGameplayManager_OnDestroy, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager* self)   {
-    getLogger().info("Campaign level ending");
-    presenceManager->statusLock.lock();
-    presenceManager->playingCampaign = false;
-    presenceManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
-    presenceManager->statusLock.unlock();
-    MissionLevelGameplayManager_OnDestroy(self);
-}
+                MAKE_HOOK_MATCH(TutorialSongController_OnDestroy, &TutorialSongController::OnDestroy, void, TutorialSongController *self)
+                {
+                    getLogger().info("Tutorial ending");
+                    presenceManager->statusLock.lock();
+                    presenceManager->playingTutorial = false;
+                    presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
+                    presenceManager->statusLock.unlock();
+                    TutorialSongController_OnDestroy(self);
+                }
 
-MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self)   {
-    getLogger().info("Game paused");
-    presenceManager->statusLock.lock();
-    presenceManager->paused = true;
-    presenceManager->statusLock.unlock();
-    PauseController_Pause(self);
-}
+                MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init, &MissionLevelScenesTransitionSetupDataSO::Init, void,
+                                MissionLevelScenesTransitionSetupDataSO *self,
+                                StringW missionId,
+                                GlobalNamespace::IDifficultyBeatmap *difficultyBeatmap,
+                                GlobalNamespace::IPreviewBeatmapLevel *previewBeatmapLevel,
+                                ArrayW<GlobalNamespace::MissionObjective *, Array<GlobalNamespace::MissionObjective *> *> missionObjectives,
+                                GlobalNamespace::ColorScheme *overrideColorScheme,
+                                GlobalNamespace::GameplayModifiers *gameplayModifiers,
+                                GlobalNamespace::PlayerSpecificSettings *playerSpecificSettings,
+                                StringW backButtonText)
+                {
+                    getLogger().info("Campaign level starting");
+                    currentFrame = -1;
+                    presenceManager->statusLock.lock();
+                    presenceManager->playingCampaign = true;
+                    presenceManager->statusLock.unlock();
 
-MAKE_HOOK_MATCH(PauseController_HandlePauseMenuManagerDidPressContinueButton, &PauseController::HandlePauseMenuManagerDidPressContinueButton, void, PauseController* self)   {
-    getLogger().info("Game resumed");
-    presenceManager->statusLock.lock();
-    presenceManager->paused = false;
-    presenceManager->statusLock.unlock();
-    PauseController_HandlePauseMenuManagerDidPressContinueButton(self);
-}
+                    MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
+                }
 
-// Used to update song time - this is called every frame and is in a convenient place allowing us to easily get the song time
-MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
-    AudioTimeSyncController_Update(self);
-    // Only update the time every 36 frames or so (0.5 seconds on Q1, shorter on Q2 but whatever) to avoid log spam
-    constexpr int TIME_UPDATE_INTERVAL = 36;
+                // Called upon mission levels (campaign levels) ending.
+                MAKE_HOOK_MATCH(MissionLevelGameplayManager_OnDestroy, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager *self)
+                {
+                    getLogger().info("Campaign level ending");
+                    presenceManager->statusLock.lock();
+                    presenceManager->playingCampaign = false;
+                    presenceManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
+                    presenceManager->statusLock.unlock();
+                    MissionLevelGameplayManager_OnDestroy(self);
+                }
 
-    currentFrame++;
-    if(currentFrame % TIME_UPDATE_INTERVAL != 0) {return;}
-    currentFrame = 0;
+                MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController *self)
+                {
+                    getLogger().info("Game paused");
+                    presenceManager->statusLock.lock();
+                    presenceManager->paused = true;
+                    presenceManager->statusLock.unlock();
+                    PauseController_Pause(self);
+                }
 
-    float time = self->get_songTime();
-    float endTime = self->get_songEndTime();
+                MAKE_HOOK_MATCH(PauseController_HandlePauseMenuManagerDidPressContinueButton, &PauseController::HandlePauseMenuManagerDidPressContinueButton, void, PauseController *self)
+                {
+                    getLogger().info("Game resumed");
+                    presenceManager->statusLock.lock();
+                    presenceManager->paused = false;
+                    presenceManager->statusLock.unlock();
+                    PauseController_HandlePauseMenuManagerDidPressContinueButton(self);
+                }
 
-    presenceManager->statusLock.lock();
-    presenceManager->timeLeft = (int) (endTime - time);
-    presenceManager->statusLock.unlock();
-}
+                // Used to update song time - this is called every frame and is in a convenient place allowing us to easily get the song time
+                MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update, void, AudioTimeSyncController *self)
+                {
+                    AudioTimeSyncController_Update(self);
+                    // Only update the time every 36 frames or so (0.5 seconds on Q1, shorter on Q2 but whatever) to avoid log spam
+                    constexpr int TIME_UPDATE_INTERVAL = 36;
 
-void saveDefaultConfig()  {
-    getLogger().info("Creating config file . . .");
-    ConfigDocument& config = getConfig().config;
-    auto& alloc = config.GetAllocator();
-    // If the config has already been created, don't overwrite it
-    if(config.HasMember("multiplayerLevelPresence")) {
-        getLogger().info("Config file already exists");
-        return;
-    }
-    config.RemoveAllMembers();
-    config.SetObject();
-    // Create the sections of the config file for each type of presence
-    rapidjson::Value levelPresence(rapidjson::kObjectType);
-    levelPresence.AddMember("details", "Playing {mapName} ({mapDifficulty})", alloc);
-    levelPresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
-    config.AddMember("standardLevelPresence", levelPresence, alloc);
+                    currentFrame++;
+                    if (currentFrame % TIME_UPDATE_INTERVAL != 0)
+                    {
+                        return;
+                    }
+                    currentFrame = 0;
 
-    rapidjson::Value practicePresence(rapidjson::kObjectType);
-    practicePresence.AddMember("details", "Practising {mapName} ({mapDifficulty})", alloc);
-    practicePresence.AddMember("state",  "By: {mapAuthor} {paused?}", alloc);
-    config.AddMember("practicePresence", practicePresence, alloc);
+                    float time = self->get_songTime();
+                    float endTime = self->get_songEndTime();
 
-    rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
-    multiLevelPresence.AddMember("details", "Playing multiplayer: ({numPlayers}/{maxPlayers})", alloc);
-    multiLevelPresence.AddMember("state",  "{mapName} - {mapDifficulty} {paused?}", alloc);
-    config.AddMember("multiplayerLevelPresence", multiLevelPresence, alloc);
+                    presenceManager->statusLock.lock();
+                    presenceManager->timeLeft = (int)(endTime - time);
+                    presenceManager->statusLock.unlock();
+                }
 
-    rapidjson::Value missionPresence(rapidjson::kObjectType);
-    missionPresence.AddMember("details", "Playing Campaign", alloc);
-    missionPresence.AddMember("state",  "{paused?}", alloc);
-    config.AddMember("missionLevelPresence", missionPresence, alloc);
+                void saveDefaultConfig()
+                {
+                    getLogger().info("Creating config file . . .");
+                    ConfigDocument &config = getConfig().config;
+                    auto &alloc = config.GetAllocator();
+                    // If the config has already been created, don't overwrite it
+                    if (config.HasMember("multiplayerLevelPresence"))
+                    {
+                        getLogger().info("Config file already exists");
+                        return;
+                    }
+                    config.RemoveAllMembers();
+                    config.SetObject();
+                    // Create the sections of the config file for each type of presence
+                    rapidjson::Value levelPresence(rapidjson::kObjectType);
+                    levelPresence.AddMember("details", "Playing {mapName} ({mapDifficulty})", alloc);
+                    levelPresence.AddMember("state", "By: {mapAuthor} {paused?}", alloc);
+                    config.AddMember("standardLevelPresence", levelPresence, alloc);
 
-    rapidjson::Value tutorialPresence(rapidjson::kObjectType);
-    tutorialPresence.AddMember("details", "Playing Tutorial", alloc);
-    tutorialPresence.AddMember("state",  "{paused?}", alloc);
-    config.AddMember("tutorialPresence", tutorialPresence, alloc);
+                    rapidjson::Value practicePresence(rapidjson::kObjectType);
+                    practicePresence.AddMember("details", "Practising {mapName} ({mapDifficulty})", alloc);
+                    practicePresence.AddMember("state", "By: {mapAuthor} {paused?}", alloc);
+                    config.AddMember("practicePresence", practicePresence, alloc);
 
-    rapidjson::Value multiLobbyPresence(rapidjson::kObjectType);
-    multiLobbyPresence.AddMember("details", "Multiplayer - In Lobby", alloc);
-    multiLobbyPresence.AddMember("state",  "with ({numPlayers}/{maxPlayers}) players", alloc);
-    config.AddMember("multiplayerLobbyPresence", multiLobbyPresence, alloc);
+                    rapidjson::Value multiLevelPresence(rapidjson::kObjectType);
+                    multiLevelPresence.AddMember("details", "Playing multiplayer: ({numPlayers}/{maxPlayers})", alloc);
+                    multiLevelPresence.AddMember("state", "{mapName} - {mapDifficulty} {paused?}", alloc);
+                    config.AddMember("multiplayerLevelPresence", multiLevelPresence, alloc);
 
-    rapidjson::Value menuPresence(rapidjson::kObjectType);
-    menuPresence.AddMember("details", "In Menu", alloc);
-    menuPresence.AddMember("state",  "", alloc);
-    config.AddMember("menuPresence", menuPresence, alloc);
+                    rapidjson::Value missionPresence(rapidjson::kObjectType);
+                    missionPresence.AddMember("details", "Playing Campaign", alloc);
+                    missionPresence.AddMember("state", "{paused?}", alloc);
+                    config.AddMember("missionLevelPresence", missionPresence, alloc);
 
-    getConfig().Write();
-    getLogger().info("Config file created");
-}
+                    rapidjson::Value tutorialPresence(rapidjson::kObjectType);
+                    tutorialPresence.AddMember("details", "Playing Tutorial", alloc);
+                    tutorialPresence.AddMember("state", "{paused?}", alloc);
+                    config.AddMember("tutorialPresence", tutorialPresence, alloc);
 
-extern "C" void setup(ModInfo& info) {
-    info.id = ID;
-    info.version = VERSION;
-    modInfo = info;
-    getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
-    getConfig().Load();
-    saveDefaultConfig(); // Create the default config file
+                    rapidjson::Value multiLobbyPresence(rapidjson::kObjectType);
+                    multiLobbyPresence.AddMember("details", "Multiplayer - In Lobby", alloc);
+                    multiLobbyPresence.AddMember("state", "with ({numPlayers}/{maxPlayers}) players", alloc);
+                    config.AddMember("multiplayerLobbyPresence", multiLobbyPresence, alloc);
 
-    getLogger().info("Completed setup!");
-}
+                    rapidjson::Value menuPresence(rapidjson::kObjectType);
+                    menuPresence.AddMember("details", "In Menu", alloc);
+                    menuPresence.AddMember("state", "", alloc);
+                    config.AddMember("menuPresence", menuPresence, alloc);
 
-extern "C" void load() {
-    getLogger().debug("Installing hooks...");
-    il2cpp_functions::Init();
+                    getConfig().Write();
+                    getLogger().info("Config file created");
+                }
 
-    // Install our function hooks
-    Logger& logger = getLogger();
-    INSTALL_HOOK(logger, StandardLevelDetailView_RefreshContent);
-    INSTALL_HOOK(logger, MenuTransitionsHelper_StartStandardLevel);
-    INSTALL_HOOK(logger, StandardLevelGameplayManager_OnDestroy);
-    INSTALL_HOOK(logger, MissionLevelScenesTransitionSetupDataSO_Init);
-    INSTALL_HOOK(logger, MissionLevelGameplayManager_OnDestroy);
-    INSTALL_HOOK(logger, TutorialSongController_Awake);
-    INSTALL_HOOK(logger, TutorialSongController_OnDestroy);
-    INSTALL_HOOK(logger, PauseController_Pause);
-    INSTALL_HOOK(logger, PauseController_HandlePauseMenuManagerDidPressContinueButton);
-    INSTALL_HOOK(logger, AudioTimeSyncController_Update);
-    INSTALL_HOOK(logger, MenuTransitionsHelper_StartMultiplayerLevel);
-    INSTALL_HOOK(logger, GameServerLobbyFlowCoordinator_DidActivate);
-    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerGameplayManager_OnDisable);
+                extern "C" void setup(ModInfo &info)
+                {
+                    info.id = ID;
+                    info.version = VERSION;
+                    modInfo = info;
+                    getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
+                    getConfig().Load();
+                    saveDefaultConfig(); // Create the default config file
 
-    getLogger().debug("Installed all hooks!");
-    presenceManager = new PresenceManager(getLogger(), getConfig().config);
-}
+                    getLogger().info("Completed setup!");
+                }
+
+                extern "C" void load()
+                {
+                    getLogger().debug("Installing hooks...");
+                    il2cpp_functions::Init();
+
+                    // Install our function hooks
+                    Logger &logger = getLogger();
+                    INSTALL_HOOK(logger, StandardLevelDetailView_RefreshContent);
+                    INSTALL_HOOK(logger, MenuTransitionsHelper_StartStandardLevel);
+                    INSTALL_HOOK(logger, StandardLevelGameplayManager_OnDestroy);
+                    INSTALL_HOOK(logger, MissionLevelScenesTransitionSetupDataSO_Init);
+                    INSTALL_HOOK(logger, MissionLevelGameplayManager_OnDestroy);
+                    INSTALL_HOOK(logger, TutorialSongController_Awake);
+                    INSTALL_HOOK(logger, TutorialSongController_OnDestroy);
+                    INSTALL_HOOK(logger, PauseController_Pause);
+                    INSTALL_HOOK(logger, PauseController_HandlePauseMenuManagerDidPressContinueButton);
+                    INSTALL_HOOK(logger, AudioTimeSyncController_Update);
+                    INSTALL_HOOK(logger, MenuTransitionsHelper_StartMultiplayerLevel);
+                    INSTALL_HOOK(logger, GameServerLobbyFlowCoordinator_DidActivate);
+                    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerGameplayManager_OnDisable);
+
+                    getLogger().debug("Installed all hooks!");
+                    presenceManager = new PresenceManager(getLogger(), getConfig().config);
+                }
