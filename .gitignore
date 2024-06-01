@@ -58,3 +58,6 @@ Android.mk.backup
 
 # Build QMODS
 *.qmod
+
+# Mod Generated Stuff
+mod.json

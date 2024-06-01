@@ -1,0 +1,93 @@
+name: NDK build
+
+env:
+   module_id: discord-presence
+   qmodName: DiscordPresence
+
+on:
+   push:
+      branches: [main]
+   pull_request:
+      branches: [main]
+
+jobs:
+   build:
+      runs-on: ubuntu-latest
+
+      steps:
+         - uses: actions/checkout@v2
+           name: Checkout
+           with:
+              submodules: true
+              lfs: true
+
+         - uses: seanmiddleditch/gha-setup-ninja@v3
+
+         - name: Create ndkpath.txt
+           run: |
+              echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
+              cat ${GITHUB_WORKSPACE}/ndkpath.txt
+
+         - name: QPM Dependencies Cache
+           id: cache-qpm-deps
+           uses: actions/cache@v3
+           env:
+              cache-name: cache-qpm-deps
+           with:
+              path: /home/runner/.local/share/QPM-RS/cache
+              key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('qpm.json') }}
+              restore-keys: |
+                 ${{ runner.os }}-build-${{ env.cache-name }}-
+                 ${{ runner.os }}-build-
+                 ${{ runner.os }}-
+                     
+         - name: QPM Rust Action
+           uses: Fernthedev/qpm-action@main
+           with:
+              workflow_token: ${{secrets.GITHUB_TOKEN}}
+
+              restore: true # will run restore on download
+              cache: true #will cache dependencies
+
+         - name: List Post Restore
+           run: |
+              echo includes:
+              ls -la ${GITHUB_WORKSPACE}/extern/includes
+              echo libs:
+              ls -la ${GITHUB_WORKSPACE}/extern/libs
+              echo cache:
+              ls -la $HOME/.local/share/QPM-RS/cache
+              echo qpm-cache:
+              qpm cache list
+
+         - name: Build
+           run: |
+              cd ${GITHUB_WORKSPACE}
+              pwsh -Command ./build.ps1
+              qpm qmod build
+
+         - name: Create Qmod
+           run: |
+              pwsh -Command ./createqmod.ps1
+
+         - name: Get Library Name
+           id: libname
+           run: |
+              cd ./build/
+              pattern="lib${module_id}*.so"
+              files=( $pattern )
+              echo ::set-output name=NAME::"${files[0]}"
+
+         - name: Upload non-debug artifact
+           uses: actions/upload-artifact@v2
+           with:
+              name: ${{ steps.libname.outputs.NAME }}
+              path: ./build/${{ steps.libname.outputs.NAME }}
+              if-no-files-found: error
+
+         - name: Upload qmod artifact
+           uses: actions/upload-artifact@v2
+           with:
+              name: ${{env.qmodName}}.qmod
+              path: ./${{ env.qmodName }}.qmod
+              if-no-files-found: error

@@ -1,0 +1,127 @@
+name: Publish release artifacts
+
+env:
+   module_id: discord-presence
+   qmodName: DiscordPresence
+
+on:
+   push:
+      tags:
+         - "*"
+
+jobs:
+   publish:
+      runs-on: ubuntu-latest
+
+      steps:
+         - uses: actions/checkout@v3
+           name: Checkout
+           with:
+              submodules: true
+              lfs: true
+
+         - uses: seanmiddleditch/gha-setup-ninja@v3
+
+         - name: Create ndkpath.txt
+           run: |
+              echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
+              cat ${GITHUB_WORKSPACE}/ndkpath.txt
+
+         - name: QPM Dependencies Cache
+           id: cache-qpm-deps
+           uses: actions/cache@v3
+           env:
+              cache-name: cache-qpm-deps
+           with:
+              path: /home/runner/.local/share/QPM-RS/cache
+              key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('qpm.json') }}
+              restore-keys: |
+                 ${{ runner.os }}-build-${{ env.cache-name }}-
+                 ${{ runner.os }}-build-
+                 ${{ runner.os }}-
+
+         - name: QPM Rust Action
+           uses: Fernthedev/qpm-action@main
+           with:
+              workflow_token: ${{secrets.GITHUB_TOKEN}}
+   
+              restore: true # will run restore on download
+              cache: true #will cache dependencies
+   
+         - name: List Post Restore
+           run: |
+              echo includes:
+              ls -la ${GITHUB_WORKSPACE}/extern/includes
+              echo libs:
+              ls -la ${GITHUB_WORKSPACE}/extern/libs
+              echo cache:
+              ls -la $HOME/.local/share/QPM-RS/cache
+              echo qpm-cache:
+              qpm cache list
+               
+         - name: Get Tag Version
+           id: get_tag_version
+           run: |
+              echo ${GITHUB_REF#refs/tags/}
+              echo ::set-output name=TAG::${GITHUB_REF#refs/tags/}
+              echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
+
+         - name: QPM Edit Version
+           run: |
+              qpm package edit --version "${{ steps.get_tag_version.outputs.VERSION }}"
+
+         - name: Build
+           run: |
+              cd ${GITHUB_WORKSPACE}
+              qpm qmod build
+              pwsh -Command ./build.ps1
+
+         - name: Create Qmod
+           run: |
+              pwsh -Command ./createqmod.ps1 ${{env.qmodName}}
+
+         # Commit the change to the package
+         - name: Configure commit
+           run: |
+              git config user.name "Github Actions"
+              git config user.email "<>"
+
+         - name: Commit Edit Version
+           run: |
+              git add ./qpm.json
+              git commit -m "Update Version and post restore" --allow-empty
+
+         # Then, we want to use the commit we have just made, and force push our tag to that commit
+         - name: Get Commit ID
+           id: get_commit_id
+           run: |
+              echo `git rev-parse HEAD`
+              echo ::set-output name=ID::`git rev-parse HEAD`
+
+         - name: Force create tag
+           run: |
+              git tag --force ${{ steps.get_tag_version.outputs.TAG }} ${{ steps.get_commit_id.outputs.ID }}
+
+         # Then, push and upload our artifacts
+         - name: Create and push version specific branch
+           env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+           run: |
+              git branch version-${{ steps.get_tag_version.outputs.TAG }}
+              git push -u origin version-${{ steps.get_tag_version.outputs.TAG }} --force --tags
+
+         - name: Get Library Name
+           id: libname
+           run: |
+              cd ./build/
+              pattern="lib${module_id}*.so"
+              files=( $pattern )
+              echo ::set-output name=NAME::"${files[0]}"
+
+         - name: Release
+           uses: softprops/action-gh-release@v1
+           with:
+              body: "**DO NOT USE THIS DOWNLOAD IF YOU WANT TO RUN SCORESABER ON YOUR QUEST! IT WILL NOT AUTHENTICATE PROPERLY!**\nDownload it from https://scoresaber.com/quest instead!"
+              files: |
+                 ./${{ env.qmodName }}.qmod
+                 ./build/${{ steps.libname.outputs.NAME }}
