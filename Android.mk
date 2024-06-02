@@ -17,6 +17,7 @@ LOCAL_PATH := $(call my-dir)
 TARGET_ARCH_ABI := $(APP_ABI)
 APP_ALLOW_MISSING_DEPS=true
 
+
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 # Creating prebuilt for dependency: modloader - version: 1.2.3
@@ -47,7 +48,7 @@ LOCAL_SHARED_LIBRARIES += beatsaber-hook_3_14_0
 LOCAL_SHARED_LIBRARIES += modloader
 LOCAL_SHARED_LIBRARIES += codegen
 LOCAL_LDLIBS += -llog
-LOCAL_CFLAGS += -I'extern/includes/libil2cpp/il2cpp/libil2cpp' -I'extern/includes/codegen/include' -DID='"discord-presence"' -DVERSION='"0.3.5"' -I'./shared' -I'extern/includes'
+LOCAL_CFLAGS += -I'extern/includes/libil2cpp/il2cpp/libil2cpp' -I'extern/includes/codegen/include' -DID='"discord-presence"' -DVERSION='"0.4.0"' -I'./shared' -I'extern/includes'
 LOCAL_CPPFLAGS += -std=c++2a
 LOCAL_C_INCLUDES += ./include ./src
 LOCAL_CPP_FEATURES += exceptions
