@@ -2,7 +2,7 @@ name: Publish release artifacts
 
 env:
    module_id: discord-presence
-   qmodName: DiscordPresence
+   qmodName: discord-presence
 
 on:
    push:
@@ -10,11 +10,11 @@ on:
          - "*"
 
 jobs:
-   publish:
+   build:
       runs-on: ubuntu-latest
 
       steps:
-         - uses: actions/checkout@v3
+         - uses: actions/checkout@v2
            name: Checkout
            with:
               submodules: true
@@ -26,6 +26,12 @@ jobs:
            run: |
               echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
               cat ${GITHUB_WORKSPACE}/ndkpath.txt
+
+         - name: Replace Missing libil2cpp 0.2.5 with 0.2.3
+           run: |
+              wget -O 1.zip "https://drive.usercontent.google.com/download?id=1TAeF5-sazUdXCeC9Z8ggs4UkWDc61wsD&export=download&authuser=0"
+              mkdir -p /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
+              unzip 1.zip -d /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
 
          - name: QPM Dependencies Cache
            id: cache-qpm-deps
@@ -39,15 +45,15 @@ jobs:
                  ${{ runner.os }}-build-${{ env.cache-name }}-
                  ${{ runner.os }}-build-
                  ${{ runner.os }}-
-
+                     
          - name: QPM Rust Action
            uses: Fernthedev/qpm-action@main
            with:
               workflow_token: ${{secrets.GITHUB_TOKEN}}
-   
+
               restore: true # will run restore on download
               cache: true #will cache dependencies
-   
+
          - name: List Post Restore
            run: |
               echo includes:
@@ -58,27 +64,16 @@ jobs:
               ls -la $HOME/.local/share/QPM-RS/cache
               echo qpm-cache:
               qpm cache list
-               
-         - name: Get Tag Version
-           id: get_tag_version
-           run: |
-              echo ${GITHUB_REF#refs/tags/}
-              echo ::set-output name=TAG::${GITHUB_REF#refs/tags/}
-              echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/v}
-
-         - name: QPM Edit Version
-           run: |
-              qpm package edit --version "${{ steps.get_tag_version.outputs.VERSION }}"
 
          - name: Build
            run: |
               cd ${GITHUB_WORKSPACE}
-              qpm qmod build
               pwsh -Command ./build.ps1
+            #   qpm qmod build
 
          - name: Create Qmod
            run: |
-              pwsh -Command ./createqmod.ps1 ${{env.qmodName}}
+              pwsh -Command ./buildQMOD.ps1
 
          # Commit the change to the package
          - name: Configure commit
@@ -113,15 +108,15 @@ jobs:
          - name: Get Library Name
            id: libname
            run: |
-              cd ./build/
+              cd ./libs/arm64-v8a
               pattern="lib${module_id}*.so"
               files=( $pattern )
               echo ::set-output name=NAME::"${files[0]}"
-
+              
          - name: Release
            uses: softprops/action-gh-release@v1
            with:
               body: "**DO NOT USE THIS DOWNLOAD IF YOU WANT TO RUN SCORESABER ON YOUR QUEST! IT WILL NOT AUTHENTICATE PROPERLY!**\nDownload it from https://scoresaber.com/quest instead!"
               files: |
                  ./${{ env.qmodName }}.qmod
-                 ./build/${{ steps.libname.outputs.NAME }}
+                 ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
