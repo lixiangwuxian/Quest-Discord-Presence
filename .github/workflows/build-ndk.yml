@@ -2,7 +2,7 @@ name: NDK build
 
 env:
    module_id: discord-presence
-   qmodName: DiscordPresence
+   qmodName: discord-presence
 
 on:
    push:
@@ -27,6 +27,12 @@ jobs:
            run: |
               echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
               cat ${GITHUB_WORKSPACE}/ndkpath.txt
+
+         - name: Replace Missing libil2cpp 0.2.5 with 0.2.3
+           run: |
+              wget -O 1.zip "https://drive.usercontent.google.com/download?id=1TAeF5-sazUdXCeC9Z8ggs4UkWDc61wsD&export=download&authuser=0"
+              mkdir -p /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
+              unzip 1.zip -d /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
 
          - name: QPM Dependencies Cache
            id: cache-qpm-deps
@@ -68,12 +74,12 @@ jobs:
 
          - name: Create Qmod
            run: |
-              pwsh -Command ./createqmod.ps1
+              pwsh -Command ./buildQMOD.ps1
 
          - name: Get Library Name
            id: libname
            run: |
-              cd ./build/
+              cd ./libs/arm64-v8a
               pattern="lib${module_id}*.so"
               files=( $pattern )
               echo ::set-output name=NAME::"${files[0]}"
@@ -82,7 +88,7 @@ jobs:
            uses: actions/upload-artifact@v2
            with:
               name: ${{ steps.libname.outputs.NAME }}
-              path: ./build/${{ steps.libname.outputs.NAME }}
+              path: ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
               if-no-files-found: error
 
          - name: Upload qmod artifact
