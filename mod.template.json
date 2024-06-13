@@ -1,7 +1,8 @@
 {
   "_QPVersion": "0.1.1",
   "name": "Discord Presence",
-  "id": "discord-presence",
+  "id": "discord-presence",  
+  "modloader": "QuestLoader",
   "author": "Lauriethefish#6700, lxtend",
   "version": "0.4.0",
   "description": "Allows discord rich presence to see which song you're playing, the current time, and much more.",
