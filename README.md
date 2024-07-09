@@ -1,4 +1,6 @@
-# Discord Presence
+# 1.35 Support is WIP
+
+<!-- # Discord Presence
 
 Now Support beatsaber 1.28 by lixiangwuxian
 
@@ -22,4 +24,4 @@ You can download the mod from the [releases page](https://github.com/lixiangwuxi
 ## Credits
 
 * [MadMagic](https://github.com/madmagic007), [zoller27osu](https://github.com/zoller27osu), [Sc2ad](https://github.com/Sc2ad) and [jakibaki](https://github.com/jakibaki) - [beatsaber-hook](https://github.com/sc2ad/beatsaber-hook)
-
+ -->
