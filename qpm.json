@@ -6,12 +6,14 @@
     "id": "discord-presence",
     "version": "0.4.0",
     "url": null,
-    "additionalData": {}
+    "additionalData": {
+      "cmake":true
+    }
   },
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^3.0.0",
+      "versionRange": "^5.1.6",
       "additionalData": {
         "extraFiles": [
           "src/inline-hook"
@@ -19,7 +21,7 @@
       }
     },
     {
-      "id": "modloader",
+      "id": "scotland2",
       "versionRange": "*",
       "additionalData": {}
     },
@@ -29,7 +31,7 @@
       "additionalData": {}
     },
     {
-      "id": "codegen",
+      "id": "bs-cordl",
       "versionRange": "*",
       "additionalData": {}
     }

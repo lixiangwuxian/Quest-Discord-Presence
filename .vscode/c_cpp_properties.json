@@ -11,10 +11,12 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/libil2cpp",
-                "${workspaceFolder}/extern/includes/codegen/include",
-                "C:/ndk/android-ndk-r21d/**",
+                "${workspaceFolder}/extern/includes/fmt/fmt/include/fmt",
+                "${workspaceFolder}/extern/includes/**",
+                "${workspaceFolder}/extern/includes",
                 "${workspaceFolder}/shared",
-                "${workspaceFolder}/extern/includes"
+                "F:/UnityHub/2022.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/NDK/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include",
+                "F:/UnityHub/2022.3.16f1/Editor/Data/PlaybackEngines/AndroidPlayer/NDK/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/**",
             ],
             "name": "Quest",
             "cStandard": "c11",
