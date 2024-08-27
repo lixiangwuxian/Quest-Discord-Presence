@@ -14,20 +14,11 @@
     {
       "id": "beatsaber-hook",
       "versionRange": "^5.1.6",
-      "additionalData": {
-        "extraFiles": [
-          "src/inline-hook"
-        ]
-      }
-    },
-    {
-      "id": "scotland2",
-      "versionRange": "*",
       "additionalData": {}
     },
     {
-      "id": "libil2cpp",
-      "versionRange": "*",
+      "id": "scotland2",
+      "versionRange": "^0.1.4",
       "additionalData": {}
     },
     {

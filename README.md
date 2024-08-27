@@ -1,4 +1,4 @@
-# 1.35 Support is WIP
+# 1.37 Support is WIP
 
 <!-- # Discord Presence
 

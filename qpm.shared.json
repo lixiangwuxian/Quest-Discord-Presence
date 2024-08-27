@@ -22,20 +22,11 @@
       {
         "id": "beatsaber-hook",
         "versionRange": "^5.1.6",
-        "additionalData": {
-          "extraFiles": [
-            "src/inline-hook"
-          ]
-        }
-      },
-      {
-        "id": "scotland2",
-        "versionRange": "*",
         "additionalData": {}
       },
       {
-        "id": "libil2cpp",
-        "versionRange": "*",
+        "id": "scotland2",
+        "versionRange": "^0.1.4",
         "additionalData": {}
       },
       {
@@ -49,10 +40,10 @@
     {
       "dependency": {
         "id": "bs-cordl",
-        "versionRange": "=3700.0.0",
+        "versionRange": "=3701.0.0",
         "additionalData": {
           "headersOnly": true,
-          "branchName": "version/v3700_0_0",
+          "branchName": "version/v3701_0_0",
           "compileOptions": {
             "includePaths": [
               "include"
@@ -67,7 +58,7 @@
           }
         }
       },
-      "version": "3700.0.0"
+      "version": "3701.0.0"
     },
     {
       "dependency": {
@@ -83,13 +74,13 @@
     {
       "dependency": {
         "id": "paper",
-        "versionRange": "=3.6.3",
+        "versionRange": "=3.6.4",
         "additionalData": {
-          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.3/libpaperlog.so",
-          "debugSoLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.3/debug_libpaperlog.so",
+          "soLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/libpaperlog.so",
+          "debugSoLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/debug_libpaperlog.so",
           "overrideSoName": "libpaperlog.so",
-          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.3/paperlog.qmod",
-          "branchName": "version/v3_6_3",
+          "modLink": "https://github.com/Fernthedev/paperlog/releases/download/v3.6.4/paperlog.qmod",
+          "branchName": "version/v3_6_4",
           "compileOptions": {
             "systemIncludes": [
               "shared/utfcpp/source"
@@ -98,20 +89,20 @@
           "cmake": false
         }
       },
-      "version": "3.6.3"
+      "version": "3.6.4"
     },
     {
       "dependency": {
         "id": "beatsaber-hook",
-        "versionRange": "=5.1.8",
+        "versionRange": "=5.1.9",
         "additionalData": {
-          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.8/libbeatsaber-hook_5_1_8.so",
-          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.8/debug_libbeatsaber-hook_5_1_8.so",
-          "branchName": "version/v5_1_8",
+          "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.9/libbeatsaber-hook_5_1_9.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.1.9/debug_libbeatsaber-hook_5_1_9.so",
+          "branchName": "version/v5_1_9",
           "cmake": true
         }
       },
-      "version": "5.1.8"
+      "version": "5.1.9"
     },
     {
       "dependency": {
