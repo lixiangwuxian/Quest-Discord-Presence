@@ -30,6 +30,11 @@
         "additionalData": {}
       },
       {
+        "id": "paper",
+        "versionRange": "^3.0.0",
+        "additionalData": {}
+      },
+      {
         "id": "bs-cordl",
         "versionRange": "*",
         "additionalData": {}
@@ -62,17 +67,6 @@
     },
     {
       "dependency": {
-        "id": "libil2cpp",
-        "versionRange": "=0.3.2",
-        "additionalData": {
-          "headersOnly": true,
-          "cmake": false
-        }
-      },
-      "version": "0.3.2"
-    },
-    {
-      "dependency": {
         "id": "paper",
         "versionRange": "=3.6.4",
         "additionalData": {
@@ -90,6 +84,17 @@
         }
       },
       "version": "3.6.4"
+    },
+    {
+      "dependency": {
+        "id": "libil2cpp",
+        "versionRange": "=0.3.2",
+        "additionalData": {
+          "headersOnly": true,
+          "cmake": false
+        }
+      },
+      "version": "0.3.2"
     },
     {
       "dependency": {

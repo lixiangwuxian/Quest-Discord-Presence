@@ -1,7 +1,7 @@
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
 #include "beatsaber-hook/shared/utils/utils.h"
-#include "beatsaber-hook/shared/utils/logging.hpp"
+// #include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
@@ -11,6 +11,7 @@
 
 #include "System/Action_1.hpp"
 
+
 #include "GlobalNamespace/IConnectedPlayer.hpp"
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
@@ -18,7 +19,7 @@
 #include "GlobalNamespace/PracticeSettings.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
-#include "GlobalNamespace/IBeatmapLevel.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
 #include "GlobalNamespace/StandardLevelGameplayManager.hpp"
 #include "GlobalNamespace/TutorialSongController.hpp"
@@ -28,33 +29,44 @@
 #include "GlobalNamespace/AudioTimeSyncController.hpp"
 #include "GlobalNamespace/MenuTransitionsHelper.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
+// #include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "GlobalNamespace/ILobbyPlayersDataModel.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "GlobalNamespace/LobbyPlayersDataModel.hpp"
 #include "System/Collections/Generic/IReadOnlyDictionary_2.hpp"
 using namespace GlobalNamespace;
 
-#include "modloader/shared/modloader.hpp"
+#include "scotland2/shared/modloader.h"
+#include "paper/shared/logger.hpp"
 
 #include <string>
 #include <optional>
 #include "presencemanager.hpp"
 
-static ModInfo modInfo;
+// static ModInfo modInfo;
+static modloader::ModInfo modInfo{MOD_ID, VERSION, 0};
 static Configuration &getConfig()
 {
     static Configuration config(modInfo);
     return config;
 }
 
-static Logger &getLogger()
+// static Logger &getLogger()
+// {
+//     static Logger *logger = new Logger(modInfo);
+//     return *logger;
+// }
+
+
+static auto getLogger()
 {
-    static Logger *logger = new Logger(modInfo);
-    return *logger;
+    static Paper::LoggerContext logger = Paper::ConstLoggerContext("QuestDiscordPresence");
+    return logger;
 }
 static PresenceManager *presenceManager = nullptr;
 static LevelInfo selectedLevel;
+
+
 
 // Converts the int representing an IBeatmapDifficulty into a string
 std::string difficultyToString(BeatmapDifficulty difficulty)
@@ -93,23 +105,35 @@ MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView
 
 static int currentFrame = -1;
 
-// Called when starting a non-multiplayer level
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (MenuTransitionsHelper::*)(::StringW, ::GlobalNamespace::IDifficultyBeatmap *, ::GlobalNamespace::IPreviewBeatmapLevel *, ::GlobalNamespace::OverrideEnvironmentSettings *, ::GlobalNamespace::ColorScheme *, ::GlobalNamespace::GameplayModifiers *, ::GlobalNamespace::PlayerSpecificSettings *, ::GlobalNamespace::PracticeSettings *, ::StringW, bool, bool, ::System::Action *, ::System::Action_2<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *, ::System::Action_2<::GlobalNamespace::LevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *)>(&MenuTransitionsHelper::StartStandardLevel), void,
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
+                static_cast<void (MenuTransitionsHelper::*)(
+                    // ::StringW, IPreviewBeatmapLevel *, BeatmapDifficulty, BeatmapCharacteristicSO *, IDifficultyBeatmap *, ColorScheme *, GameplayModifiers *, PlayerSpecificSettings *, PracticeSettings *, ::StringW, bool, System::Action *, System::Action_2<StandardLevelScenesTransitionSetupDataSO *, LevelCompletionResults *> *, System::Action_2<LevelScenesTransitionSetupDataSO *, LevelCompletionResults *> *)>(&MenuTransitionsHelper::StartStandardLevel
+                    ::StringW,ByRef<::GlobalNamespace::BeatmapKey>,::GlobalNamespace::BeatmapLevel*,::GlobalNamespace::IBeatmapLevelData*,::GlobalNamespace::OverrideEnvironmentSettings*,::GlobalNamespace::ColorScheme*,::GlobalNamespace::ColorScheme*,::GlobalNamespace::GameplayModifiers*,::GlobalNamespace::PlayerSpecificSettings*,::GlobalNamespace::PracticeSettings*,::GlobalNamespace::EnvironmentsListModel*,::StringW,bool,bool,System::Action*,System::Action_2<::UnityW<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO>,::GlobalNamespace::LevelCompletionResults*>*,System::Action_2<::UnityW<::GlobalNamespace::LevelScenesTransitionSetupDataSO>,::GlobalNamespace::LevelCompletionResults*>*,System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
+                    ),
+                void,
                 MenuTransitionsHelper *self,
-                ::StringW gameMode,
-                ::GlobalNamespace::IDifficultyBeatmap *difficultyBeatmap,
-                ::GlobalNamespace::IPreviewBeatmapLevel *previewBeatmapLevel,
-                ::GlobalNamespace::OverrideEnvironmentSettings *overrideEnvironmentSettings,
-                ::GlobalNamespace::ColorScheme *overrideColorScheme,
-                ::GlobalNamespace::GameplayModifiers *gameplayModifiers,
-                ::GlobalNamespace::PlayerSpecificSettings *playerSpecificSettings,
-                ::GlobalNamespace::PracticeSettings *practiceSettings,
+                ::StringW gameMode, 
+                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey, 
+                ::GlobalNamespace::BeatmapLevel* beatmapLevel,   
+                ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData, 
+                ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
+                ::GlobalNamespace::ColorScheme* overrideColorScheme, 
+                ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
+                ::GlobalNamespace::GameplayModifiers* gameplayModifiers, 
+                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+                ::GlobalNamespace::PracticeSettings* practiceSettings, 
+                ::GlobalNamespace::EnvironmentsListModel* environmentsListModel, 
                 ::StringW backButtonText,
-                bool useTestNoteCutCountEffects,
-                bool startPaused,
-                ::System::Action *beforeSceneSwitchCallback,
-                ::System::Action_2<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *levelFinishedCallback,
-                ::System::Action_2<::GlobalNamespace::LevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *levelRestartedCallback)
+                bool useTestNoteCutSoundEffects, 
+                bool startPaused, 
+                ::System::Action* beforeSceneSwitchCallback, 
+                ::System::Action_1<::Zenject::DiContainer*>* afterSceneSwitchCallback,
+                ::System::Action_2<::UnityW<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO>, 
+                ::GlobalNamespace::LevelCompletionResults*>* levelFinishedCallback,
+                ::System::Action_2<::UnityW<::GlobalNamespace::LevelScenesTransitionSetupDataSO>, 
+                ::GlobalNamespace::LevelCompletionResults*>* levelRestartedCallback,
+                ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
+                )
 {
     getLogger().info("Song Started");
     currentFrame = -1;

@@ -22,7 +22,7 @@
 #define PORT 3500
 #define CONNECTION_QUEUE_LENGTH 1 // How many connections to store to process
 
-PresenceManager::PresenceManager(Logger& logger, const ConfigDocument& config) : logger(logger), config(config) {
+PresenceManager::PresenceManager(Paper::LoggerContext& logger, const ConfigDocument& config) : logger(logger), config(config) {
     logger.info("Starting network thread . . .");
     networkThread = std::thread(&PresenceManager::runServer, this); // Run the thread
 }

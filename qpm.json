@@ -22,6 +22,11 @@
       "additionalData": {}
     },
     {
+      "id": "paper",
+      "versionRange": "^3.0.0",
+      "additionalData": {}
+    },
+    {
       "id": "bs-cordl",
       "versionRange": "*",
       "additionalData": {}
