@@ -4,11 +4,15 @@ target_include_directories(${COMPILE_ID} PRIVATE ${EXTERN_DIR}/includes)
 target_include_directories(${COMPILE_ID} SYSTEM PRIVATE ${EXTERN_DIR}/includes/libil2cpp/il2cpp/libil2cpp)
 
 # includes and compile options added by other libraries
-RECURSE_FILES(src_inline_hook_beatsaber_hook_local_extra_c ${EXTERN_DIR}/includes/beatsaber-hook/src/inline-hook/*.c)
-RECURSE_FILES(src_inline_hook_beatsaber_hook_local_extra_cpp ${EXTERN_DIR}/includes/beatsaber-hook/src/inline-hook/*.cpp)
-target_sources(${COMPILE_ID} PRIVATE ${src_inline_hook_beatsaber_hook_local_extra_c})
-target_sources(${COMPILE_ID} PRIVATE ${src_inline_hook_beatsaber_hook_local_extra_cpp})
-# Sadly, there were none with extra include dirs
+target_include_directories(${COMPILE_ID} SYSTEM PRIVATE ${EXTERN_DIR}/includes/paper/shared/utfcpp/source)
+target_compile_options(${COMPILE_ID} PRIVATE -Wno-invalid-offsetof)
+target_include_directories(${COMPILE_ID} PRIVATE ${EXTERN_DIR}/includes/bs-cordl/include)
+target_compile_options(${COMPILE_ID} PRIVATE -DNEED_UNSAFE_CSHARP)
+target_compile_options(${COMPILE_ID} PRIVATE -fdeclspec)
+target_compile_options(${COMPILE_ID} PRIVATE -DUNITY_2021)
+target_compile_options(${COMPILE_ID} PRIVATE -DHAS_CODEGEN)
+target_include_directories(${COMPILE_ID} SYSTEM PRIVATE ${EXTERN_DIR}/includes/fmt/fmt/include/)
+target_compile_options(${COMPILE_ID} PRIVATE -DFMT_HEADER_ONLY)
 
 # libs dir -> stores .so or .a files (or symlinked!)
 target_link_directories(${COMPILE_ID} PRIVATE ${EXTERN_DIR}/libs)

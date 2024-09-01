@@ -1,7 +1,7 @@
 #pragma once
 
-#include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
+#include "paper/shared/logger.hpp"
 #include <thread>
 #include <optional>
 #include <mutex>
@@ -27,7 +27,8 @@ enum TimeMode {
 
 class PresenceManager    {
 private:
-    Logger& logger;
+    // Logger& logger;
+    Paper::LoggerContext logger;
     const ConfigDocument& config;
     std::thread networkThread;
 
@@ -50,5 +51,5 @@ public:
     
     int timeLeft = 0; // The time when first going into the menu, or going into a multiplayer game. Or the time left if it's a song.
 
-    PresenceManager(Logger& logger, const ConfigDocument& config);
+    PresenceManager(Paper::LoggerContext logger, const ConfigDocument& config);
 };

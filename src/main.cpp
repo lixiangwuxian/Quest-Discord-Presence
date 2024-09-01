@@ -1,15 +1,17 @@
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
 #include "beatsaber-hook/shared/utils/utils.h"
-#include "beatsaber-hook/shared/utils/logging.hpp"
+// #include "beatsaber-hook/shared/utils/logging.hpp"
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "beatsaber-hook/shared/utils/hooking.hpp"
+#include "custom-types/shared/delegate.hpp"
 
 #include "UnityEngine/Resources.hpp"
 
 #include "System/Action_1.hpp"
+
 
 #include "GlobalNamespace/IConnectedPlayer.hpp"
 #include "GlobalNamespace/MultiplayerPlayersManager.hpp"
@@ -18,7 +20,7 @@
 #include "GlobalNamespace/PracticeSettings.hpp"
 #include "GlobalNamespace/StandardLevelDetailView.hpp"
 #include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
-#include "GlobalNamespace/IBeatmapLevel.hpp"
+#include "GlobalNamespace/BeatmapLevel.hpp"
 #include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
 #include "GlobalNamespace/StandardLevelGameplayManager.hpp"
 #include "GlobalNamespace/TutorialSongController.hpp"
@@ -28,33 +30,39 @@
 #include "GlobalNamespace/AudioTimeSyncController.hpp"
 #include "GlobalNamespace/MenuTransitionsHelper.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
-#include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "GlobalNamespace/ILobbyPlayersDataModel.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "GlobalNamespace/LobbyPlayersDataModel.hpp"
 #include "System/Collections/Generic/IReadOnlyDictionary_2.hpp"
 using namespace GlobalNamespace;
 
-#include "modloader/shared/modloader.hpp"
+#include "scotland2/shared/modloader.h"
+#include "paper/shared/logger.hpp"
 
 #include <string>
 #include <optional>
 #include "presencemanager.hpp"
+#include <sstream> 
 
-static ModInfo modInfo;
+// static ModInfo modInfo;
+static modloader::ModInfo modInfo{MOD_ID, VERSION, 0};
 static Configuration &getConfig()
 {
     static Configuration config(modInfo);
     return config;
 }
 
-static Logger &getLogger()
+static Paper::LoggerContext PaparLogger= Paper::ConstLoggerContext("QuestDiscordPresence");
+static auto getLogger()
 {
-    static Logger *logger = new Logger(modInfo);
-    return *logger;
+    return PaparLogger;
 }
 static PresenceManager *presenceManager = nullptr;
 static LevelInfo selectedLevel;
+
+#define MOD_EXPORT __attribute__((visibility("default")))
+#define MOD_EXTERN_FUNC extern "C" MOD_EXPORT
+
 
 // Converts the int representing an IBeatmapDifficulty into a string
 std::string difficultyToString(BeatmapDifficulty difficulty)
@@ -79,47 +87,95 @@ std::string difficultyToString(BeatmapDifficulty difficulty)
 MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView *self)
 {
     StandardLevelDetailView_RefreshContent(self);
-    IPreviewBeatmapLevel *level = reinterpret_cast<IPreviewBeatmapLevel *>(self->level);
+    BeatmapLevel *level = self->____beatmapLevel;
     if (!level)
     {
         return;
     }
 
     // Check if the level is an instance of BeatmapLevelSO
-    selectedLevel.name = to_utf8(csstrtostr(level->get_songName()));
-    selectedLevel.levelAuthor = to_utf8(csstrtostr(level->get_levelAuthorName()));
-    selectedLevel.songAuthor = to_utf8(csstrtostr(level->get_songAuthorName()));
+    selectedLevel.name = std::string(level->songName);
+    std::stringstream ss;
+    for (size_t i = 0; i < level->allMappers.size(); ++i) {
+        // 将每个 ::StringW 转换为 std::string
+        std::string mapper = static_cast<std::string>(level->allMappers[i]);
+
+        ss << mapper;
+
+        // 如果不是最后一个元素，添加逗号
+        if (i != level->allMappers.size() - 1) {
+            ss << ",";
+        }
+    }
+    selectedLevel.levelAuthor = ss.str();  // 返回结果字符串
+    selectedLevel.songAuthor = std::string(level->songAuthorName);
 }
 
 static int currentFrame = -1;
 
-// Called when starting a non-multiplayer level
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (MenuTransitionsHelper::*)(::StringW, ::GlobalNamespace::IDifficultyBeatmap *, ::GlobalNamespace::IPreviewBeatmapLevel *, ::GlobalNamespace::OverrideEnvironmentSettings *, ::GlobalNamespace::ColorScheme *, ::GlobalNamespace::GameplayModifiers *, ::GlobalNamespace::PlayerSpecificSettings *, ::GlobalNamespace::PracticeSettings *, ::StringW, bool, bool, ::System::Action *, ::System::Action_2<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *, ::System::Action_2<::GlobalNamespace::LevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *)>(&MenuTransitionsHelper::StartStandardLevel), void,
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, 
+                static_cast<void (MenuTransitionsHelper::*)(
+                    ::StringW, 
+                    ByRef<::GlobalNamespace::BeatmapKey>,  // 确保使用 ByRef
+                    ::GlobalNamespace::BeatmapLevel*, 
+                    ::GlobalNamespace::IBeatmapLevelData*, 
+                    ::GlobalNamespace::OverrideEnvironmentSettings*, 
+                    ::GlobalNamespace::ColorScheme*, 
+                    ::GlobalNamespace::ColorScheme*, 
+                    ::GlobalNamespace::GameplayModifiers*, 
+                    ::GlobalNamespace::PlayerSpecificSettings*, 
+                    ::GlobalNamespace::PracticeSettings*, 
+                    ::GlobalNamespace::EnvironmentsListModel*, 
+                    ::StringW, 
+                    bool, 
+                    bool, 
+                    System::Action*, 
+                    System::Action_1<::Zenject::DiContainer*>*, 
+                    System::Action_2<::UnityW<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO>, 
+                                     ::GlobalNamespace::LevelCompletionResults*>*, 
+                    System::Action_2<::UnityW<::GlobalNamespace::LevelScenesTransitionSetupDataSO>, 
+                                     ::GlobalNamespace::LevelCompletionResults*>*, 
+                    System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
+                )>(&MenuTransitionsHelper::StartStandardLevel),
+                void,
                 MenuTransitionsHelper *self,
-                ::StringW gameMode,
-                ::GlobalNamespace::IDifficultyBeatmap *difficultyBeatmap,
-                ::GlobalNamespace::IPreviewBeatmapLevel *previewBeatmapLevel,
-                ::GlobalNamespace::OverrideEnvironmentSettings *overrideEnvironmentSettings,
-                ::GlobalNamespace::ColorScheme *overrideColorScheme,
-                ::GlobalNamespace::GameplayModifiers *gameplayModifiers,
-                ::GlobalNamespace::PlayerSpecificSettings *playerSpecificSettings,
-                ::GlobalNamespace::PracticeSettings *practiceSettings,
+                ::StringW gameMode, 
+                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
+                ::GlobalNamespace::BeatmapLevel* beatmapLevel,   
+                ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData, 
+                ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
+                ::GlobalNamespace::ColorScheme* overrideColorScheme, 
+                ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
+                ::GlobalNamespace::GameplayModifiers* gameplayModifiers, 
+                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+                ::GlobalNamespace::PracticeSettings* practiceSettings, 
+                ::GlobalNamespace::EnvironmentsListModel* environmentsListModel, 
                 ::StringW backButtonText,
-                bool useTestNoteCutCountEffects,
-                bool startPaused,
-                ::System::Action *beforeSceneSwitchCallback,
-                ::System::Action_2<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *levelFinishedCallback,
-                ::System::Action_2<::GlobalNamespace::LevelScenesTransitionSetupDataSO *, ::GlobalNamespace::LevelCompletionResults *> *levelRestartedCallback)
+                bool useTestNoteCutSoundEffects, 
+                bool startPaused, 
+                ::System::Action* beforeSceneSwitchCallback, 
+                ::System::Action_1<::Zenject::DiContainer*>* afterSceneSwitchCallback,
+                ::System::Action_2<::UnityW<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO>, 
+                ::GlobalNamespace::LevelCompletionResults*>* levelFinishedCallback,
+                ::System::Action_2<::UnityW<::GlobalNamespace::LevelScenesTransitionSetupDataSO>, 
+                ::GlobalNamespace::LevelCompletionResults*>* levelRestartedCallback,
+                ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
+)
 {
+    // 记录日志，标记歌曲开始
     getLogger().info("Song Started");
-    currentFrame = -1;
-    BeatmapDifficulty difficulty = difficultyBeatmap->get_difficulty();
-    selectedLevel.selectedDifficulty = difficultyToString(difficulty);
 
-    // Set the currently playing level to the selected one, since we are in a song
+    // 初始化当前帧数为 -1
+    currentFrame = -1;
+
+    // 从传递的 difficultyBeatmap 中获取难度
+    BeatmapDifficulty difficulty = beatmapKey->difficulty;
+    selectedLevel.selectedDifficulty = difficultyToString(difficulty); //todo
+
+    // 设置当前正在播放的关卡信息
     presenceManager->statusLock.lock();
     presenceManager->playingLevel.emplace(selectedLevel);
-    presenceManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
+    presenceManager->isPractice = practiceSettings != nullptr; 
 
     if (presenceManager->isPractice)
     {
@@ -127,56 +183,87 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (Menu
     }
     presenceManager->statusLock.unlock();
 
+    // 调用原始的 StartStandardLevel 函数
     MenuTransitionsHelper_StartStandardLevel(
         self,
         gameMode,
-        difficultyBeatmap,
-        previewBeatmapLevel,
+        beatmapKey,  // 确保传递 ByRef 参数
+        beatmapLevel,
+        beatmapLevelData,
         overrideEnvironmentSettings,
         overrideColorScheme,
+        beatmapOverrideColorScheme,
         gameplayModifiers,
         playerSpecificSettings,
         practiceSettings,
+        environmentsListModel,
         backButtonText,
-        useTestNoteCutCountEffects,
+        useTestNoteCutSoundEffects,
         startPaused,
         beforeSceneSwitchCallback,
+        afterSceneSwitchCallback,
         levelFinishedCallback,
-        levelRestartedCallback);
+        levelRestartedCallback,
+        recordingToolData
+    );
 }
 
+
 // Called when starting a multiplayer level
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<void (MenuTransitionsHelper::*)(::StringW, IPreviewBeatmapLevel *, BeatmapDifficulty, BeatmapCharacteristicSO *, IDifficultyBeatmap *, ColorScheme *, GameplayModifiers *, PlayerSpecificSettings *, PracticeSettings *, ::StringW, bool, System::Action *, System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO *, MultiplayerResultsData *> *, System::Action_1<DisconnectedReason> *)>(&MenuTransitionsHelper::StartMultiplayerLevel), void,
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
+                    void (MenuTransitionsHelper::*)
+                    (
+                        ::StringW,
+                        ByRef<::GlobalNamespace::BeatmapKey>, // 确保类型为 ByRef
+                        ::GlobalNamespace::BeatmapLevel*,
+                        ::GlobalNamespace::IBeatmapLevelData*,
+                        ::GlobalNamespace::ColorScheme*,
+                        ::GlobalNamespace::GameplayModifiers*,
+                        ::GlobalNamespace::PlayerSpecificSettings*,
+                        ::GlobalNamespace::PracticeSettings*,
+                        ::StringW,
+                        bool,
+                        ::System::Action*,
+                        ::System::Action_1<::Zenject::DiContainer*>*,
+                        ::System::Action_2<::UnityW<::GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO>, ::GlobalNamespace::MultiplayerResultsData*>*,
+                        ::System::Action_1<::GlobalNamespace::DisconnectedReason>*
+                    )
+                >(&MenuTransitionsHelper::StartMultiplayerLevel), void,
                 MenuTransitionsHelper *self,
                 ::StringW gameMode,
-                ::GlobalNamespace::IPreviewBeatmapLevel *previewBeatmapLevel,
-                ::GlobalNamespace::BeatmapDifficulty beatmapDifficulty,
-                ::GlobalNamespace::BeatmapCharacteristicSO *beatmapCharacteristic,
-                ::GlobalNamespace::IDifficultyBeatmap *difficultyBeatmap,
-                ::GlobalNamespace::ColorScheme *overrideColorScheme,
-                ::GlobalNamespace::GameplayModifiers *gameplayModifiers,
-                ::GlobalNamespace::PlayerSpecificSettings *playerSpecificSettings,
-                ::GlobalNamespace::PracticeSettings *practiceSettings,
+                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,  // 确保使用 ByRef
+                ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+                ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
+                ::GlobalNamespace::ColorScheme* overrideColorScheme,
+                ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
+                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+                ::GlobalNamespace::PracticeSettings* practiceSettings,
                 ::StringW backButtonText,
                 bool useTestNoteCutSoundEffects,
-                ::System::Action *beforeSceneSwitchCallback,
-                ::System::Action_2<::GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO *, ::GlobalNamespace::MultiplayerResultsData *> *levelFinishedCallback,
-                ::System::Action_1<::GlobalNamespace::DisconnectedReason> *didDisconnectCallback)
+                ::System::Action* beforeSceneSwitchCallback,
+                ::System::Action_1<::Zenject::DiContainer*>* afterSceneSwitchCallback,
+                ::System::Action_2<::UnityW<::GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO>, ::GlobalNamespace::MultiplayerResultsData*>* levelFinishedCallback,
+                ::System::Action_1<::GlobalNamespace::DisconnectedReason>* didDisconnectCallback)
 {
 
     getLogger().info("Multiplayer Song Started");
-    selectedLevel.selectedDifficulty = difficultyToString(beatmapDifficulty);
+
+    // 使用 beatmapKey 和 beatmapLevelData 来确定选中的难度
+    BeatmapDifficulty difficulty = beatmapKey->difficulty;
+    selectedLevel.selectedDifficulty = difficultyToString(difficulty);
+    
+    // // 设置正在播放的关卡
     presenceManager->statusLock.lock();
     presenceManager->playingLevel.emplace(selectedLevel);
     presenceManager->statusLock.unlock();
 
+    // 调用原始函数
     MenuTransitionsHelper_StartMultiplayerLevel(
         self,
         gameMode,
-        previewBeatmapLevel,
-        beatmapDifficulty,
-        beatmapCharacteristic,
-        difficultyBeatmap,
+        beatmapKey,  // 使用 ByRef 参数
+        beatmapLevel,
+        beatmapLevelData,
         overrideColorScheme,
         gameplayModifiers,
         playerSpecificSettings,
@@ -184,6 +271,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<void (M
         backButtonText,
         useTestNoteCutSoundEffects,
         beforeSceneSwitchCallback,
+        afterSceneSwitchCallback,
         levelFinishedCallback,
         didDisconnectCallback);
 }
@@ -191,12 +279,12 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<void (M
 void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager *multiplayerSessionManager, ::StringW userId)
 {
     presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1;
+    // presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1; //todo
     presenceManager->statusLock.unlock();
 }
 
 // Reset the lobby back to null when we leave back to the menu
-void onLobbyDisconnect()
+void onLobbyDisconnect(GlobalNamespace::DisconnectedReason reason)
 {
     getLogger().info("Left Multiplayer lobby");
     presenceManager->statusLock.lock();
@@ -212,30 +300,38 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
     // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
 
     // Used for updating current player count in the DidChange event
-    LobbyPlayersDataModel *lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel *>(self->lobbyPlayersDataModel);
+    LobbyPlayersDataModel *lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel *>(self->_lobbyPlayersDataModel);
 
     // Used for getting max player count
     // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
-    IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->multiplayerSessionManager;
+    IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->_multiplayerSessionManager;
 
-    int maxPlayers = sessionManager->get_maxPlayerCount();
-    int numActivePlayers = sessionManager->get_connectedPlayerCount();
+    // int maxPlayers = sessionManager->get_maxPlayerCount(); //todo
+    // int numActivePlayers = sessionManager->get_connectedPlayerCount(); //todo
 
     // Set the number of players in this lobby
     MultiplayerLobbyInfo lobbyInfo;
-    lobbyInfo.numberOfPlayers = numActivePlayers + 1;
-    lobbyInfo.maxPlayers = maxPlayers;
+    // lobbyInfo.numberOfPlayers = numActivePlayers + 1; //todo
+    // lobbyInfo.maxPlayers = maxPlayers; //todo
     presenceManager->statusLock.lock();
     presenceManager->multiplayerLobby.emplace(lobbyInfo);
     presenceManager->statusLock.unlock();
 
-    // Used to update player count
-    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<::StringW> *>(classof(System::Action_1<::StringW> *), sessionManager, handleLobbyPlayersDataModelDidChange));
+    // 然后创建委托并添加到事件
+    lobbyPlayersDataModel->add_didChangeEvent(
+        custom_types::MakeDelegate<System::Action_1<StringW>*>(
+            std::function<void(StringW)>(std::bind(handleLobbyPlayersDataModelDidChange, sessionManager, std::placeholders::_1))
+        )
+    );
+
+
 
     // Register disconnect from lobby event
-    sessionManager->add_disconnectedEvent(
-        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(classof(System::Action_1<GlobalNamespace::DisconnectedReason> *), static_cast<Il2CppObject *>(nullptr), onLobbyDisconnect));
-
+    // sessionManager->add_disconnectedEvent(
+    //     custom_types::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(
+    //         std::function<void(GlobalNamespace::DisconnectedReason)>(std::bind(onLobbyDisconnect, std::placeholders::_1))
+    //     )
+    // ); //todo
     GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
 
@@ -281,25 +377,67 @@ MAKE_HOOK_MATCH(TutorialSongController_OnDestroy, &TutorialSongController::OnDes
     TutorialSongController_OnDestroy(self);
 }
 
-MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init, &MissionLevelScenesTransitionSetupDataSO::Init, void,
+MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init, 
+                static_cast<void (MissionLevelScenesTransitionSetupDataSO::*)(
+                    ::StringW, 
+                    ByRef<::GlobalNamespace::BeatmapKey>, 
+                    ::GlobalNamespace::BeatmapLevel*, 
+                    ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*>, 
+                    ::GlobalNamespace::ColorScheme*, 
+                    ::GlobalNamespace::GameplayModifiers*, 
+                    ::GlobalNamespace::PlayerSpecificSettings*, 
+                    ::GlobalNamespace::EnvironmentsListModel*, 
+                    ::GlobalNamespace::BeatmapLevelsModel*, 
+                    ::GlobalNamespace::AudioClipAsyncLoader*, 
+                    ::BeatSaber::PerformancePresets::PerformancePreset*, 
+                    ::GlobalNamespace::BeatmapDataLoader*, 
+                    ::StringW
+                )>(&MissionLevelScenesTransitionSetupDataSO::Init), 
+                void,
                 MissionLevelScenesTransitionSetupDataSO *self,
-                StringW missionId,
-                GlobalNamespace::IDifficultyBeatmap *difficultyBeatmap,
-                GlobalNamespace::IPreviewBeatmapLevel *previewBeatmapLevel,
-                ArrayW<GlobalNamespace::MissionObjective *, Array<GlobalNamespace::MissionObjective *> *> missionObjectives,
-                GlobalNamespace::ColorScheme *overrideColorScheme,
-                GlobalNamespace::GameplayModifiers *gameplayModifiers,
-                GlobalNamespace::PlayerSpecificSettings *playerSpecificSettings,
-                StringW backButtonText)
+                ::StringW missionId,
+                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
+                ::GlobalNamespace::BeatmapLevel* beatmapLevel,
+                ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*> missionObjectives,
+                ::GlobalNamespace::ColorScheme* overrideColorScheme,
+                ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
+                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+                ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
+                ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
+                ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
+                ::BeatSaber::PerformancePresets::PerformancePreset* performancePreset,
+                ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
+                ::StringW backButtonText)
 {
     getLogger().info("Campaign level starting");
+
+    // 设置当前帧数为 -1
     currentFrame = -1;
+
+    // 设置状态为正在播放的Campaign
     presenceManager->statusLock.lock();
     presenceManager->playingCampaign = true;
     presenceManager->statusLock.unlock();
 
-    MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
+    // 调用原始的 Init 函数，传入所有参数
+    MissionLevelScenesTransitionSetupDataSO_Init(
+        self, 
+        missionId, 
+        beatmapKey, 
+        beatmapLevel,
+        missionObjectives,
+        overrideColorScheme,
+        gameplayModifiers,
+        playerSpecificSettings,
+        environmentsListModel,
+        beatmapLevelsModel,
+        audioClipAsyncLoader,
+        performancePreset,
+        beatmapDataLoader,
+        backButtonText
+    );
 }
+
 
 // Called upon mission levels (campaign levels) ending.
 MAKE_HOOK_MATCH(MissionLevelGameplayManager_OnDestroy, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager *self)
@@ -405,38 +543,40 @@ void saveDefaultConfig()
     getLogger().info("Config file created");
 }
 
-extern "C" void setup(ModInfo &info)
+MOD_EXTERN_FUNC void setup(CModInfo *info)
 {
-    info.id = ID;
-    info.version = VERSION;
-    modInfo = info;
-    getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
+    *info = modInfo.to_c();
+
+    // info.id = ID;
+    // info.version = VERSION;
+    // modInfo = info;
+    // getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
     getConfig().Load();
     saveDefaultConfig(); // Create the default config file
-
+    Paper::Logger::RegisterFileContextId(getLogger().tag);
     getLogger().info("Completed setup!");
 }
 
-extern "C" void load()
+MOD_EXTERN_FUNC void load()
 {
     getLogger().debug("Installing hooks...");
     il2cpp_functions::Init();
 
     // Install our function hooks
-    Logger &logger = getLogger();
-    INSTALL_HOOK(logger, StandardLevelDetailView_RefreshContent);
-    INSTALL_HOOK(logger, MenuTransitionsHelper_StartStandardLevel);
-    INSTALL_HOOK(logger, StandardLevelGameplayManager_OnDestroy);
-    INSTALL_HOOK(logger, MissionLevelScenesTransitionSetupDataSO_Init);
-    INSTALL_HOOK(logger, MissionLevelGameplayManager_OnDestroy);
-    INSTALL_HOOK(logger, TutorialSongController_Awake);
-    INSTALL_HOOK(logger, TutorialSongController_OnDestroy);
-    INSTALL_HOOK(logger, PauseController_Pause);
-    INSTALL_HOOK(logger, PauseController_HandlePauseMenuManagerDidPressContinueButton);
-    INSTALL_HOOK(logger, AudioTimeSyncController_Update);
-    INSTALL_HOOK(logger, MenuTransitionsHelper_StartMultiplayerLevel);
-    INSTALL_HOOK(logger, GameServerLobbyFlowCoordinator_DidActivate);
-    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerGameplayManager_OnDisable);
+    // Logger &PaparLogger = getLogger();
+    INSTALL_HOOK(PaparLogger, StandardLevelDetailView_RefreshContent);
+    INSTALL_HOOK(PaparLogger, MenuTransitionsHelper_StartStandardLevel);
+    INSTALL_HOOK(PaparLogger, StandardLevelGameplayManager_OnDestroy);
+    INSTALL_HOOK(PaparLogger, MissionLevelScenesTransitionSetupDataSO_Init);
+    INSTALL_HOOK(PaparLogger, MissionLevelGameplayManager_OnDestroy);
+    INSTALL_HOOK(PaparLogger, TutorialSongController_Awake);
+    INSTALL_HOOK(PaparLogger, TutorialSongController_OnDestroy);
+    INSTALL_HOOK(PaparLogger, PauseController_Pause);
+    INSTALL_HOOK(PaparLogger, PauseController_HandlePauseMenuManagerDidPressContinueButton);
+    INSTALL_HOOK(PaparLogger, AudioTimeSyncController_Update);
+    INSTALL_HOOK(PaparLogger, MenuTransitionsHelper_StartMultiplayerLevel);
+    INSTALL_HOOK(PaparLogger, GameServerLobbyFlowCoordinator_DidActivate);
+    INSTALL_HOOK(PaparLogger, MultiplayerLocalActivePlayerGameplayManager_OnDisable);
 
     getLogger().debug("Installed all hooks!");
     presenceManager = new PresenceManager(getLogger(), getConfig().config);

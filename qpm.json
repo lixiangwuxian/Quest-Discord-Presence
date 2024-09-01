@@ -6,31 +6,34 @@
     "id": "discord-presence",
     "version": "0.4.0",
     "url": null,
-    "additionalData": {}
+    "additionalData": {
+      "cmake":true
+    }
   },
   "dependencies": [
     {
       "id": "beatsaber-hook",
+      "versionRange": "^5.1.6",
+      "additionalData": {}
+    },
+    {
+      "id": "scotland2",
+      "versionRange": "^0.1.4",
+      "additionalData": {}
+    },
+    {
+      "id": "paper",
       "versionRange": "^3.0.0",
-      "additionalData": {
-        "extraFiles": [
-          "src/inline-hook"
-        ]
-      }
-    },
-    {
-      "id": "modloader",
-      "versionRange": "*",
       "additionalData": {}
     },
     {
-      "id": "libil2cpp",
-      "versionRange": "*",
+      "id": "custom-types",
+      "versionRange": "^0.17.10",
       "additionalData": {}
     },
     {
-      "id": "codegen",
-      "versionRange": "*",
+      "id": "bs-cordl",
+      "versionRange": "^3700.0.0",
       "additionalData": {}
     }
   ],

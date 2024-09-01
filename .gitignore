@@ -61,3 +61,6 @@ Android.mk.backup
 
 # Mod Generated Stuff
 mod.json
+
+# Build Path
+build/
