@@ -30,7 +30,6 @@
 #include "GlobalNamespace/AudioTimeSyncController.hpp"
 #include "GlobalNamespace/MenuTransitionsHelper.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
-// #include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "GlobalNamespace/ILobbyPlayersDataModel.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
 #include "GlobalNamespace/LobbyPlayersDataModel.hpp"
@@ -61,6 +60,8 @@ static auto getLogger()
 static PresenceManager *presenceManager = nullptr;
 static LevelInfo selectedLevel;
 
+#define MOD_EXPORT __attribute__((visibility("default")))
+#define MOD_EXTERN_FUNC extern "C" MOD_EXPORT
 
 
 // Converts the int representing an IBeatmapDifficulty into a string
@@ -278,7 +279,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
 void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager *multiplayerSessionManager, ::StringW userId)
 {
     presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1;
+    // presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1; //todo
     presenceManager->statusLock.unlock();
 }
 
@@ -305,13 +306,13 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
     // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
     IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->_multiplayerSessionManager;
 
-    int maxPlayers = sessionManager->get_maxPlayerCount();
-    int numActivePlayers = sessionManager->get_connectedPlayerCount();
+    // int maxPlayers = sessionManager->get_maxPlayerCount(); //todo
+    // int numActivePlayers = sessionManager->get_connectedPlayerCount(); //todo
 
     // Set the number of players in this lobby
     MultiplayerLobbyInfo lobbyInfo;
-    lobbyInfo.numberOfPlayers = numActivePlayers + 1;
-    lobbyInfo.maxPlayers = maxPlayers;
+    // lobbyInfo.numberOfPlayers = numActivePlayers + 1; //todo
+    // lobbyInfo.maxPlayers = maxPlayers; //todo
     presenceManager->statusLock.lock();
     presenceManager->multiplayerLobby.emplace(lobbyInfo);
     presenceManager->statusLock.unlock();
@@ -326,11 +327,11 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
 
 
     // Register disconnect from lobby event
-    sessionManager->add_disconnectedEvent(
-        custom_types::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(
-            std::function<void(GlobalNamespace::DisconnectedReason)>(std::bind(onLobbyDisconnect, std::placeholders::_1))
-        )
-    );
+    // sessionManager->add_disconnectedEvent(
+    //     custom_types::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(
+    //         std::function<void(GlobalNamespace::DisconnectedReason)>(std::bind(onLobbyDisconnect, std::placeholders::_1))
+    //     )
+    // ); //todo
     GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
 
@@ -542,7 +543,7 @@ void saveDefaultConfig()
     getLogger().info("Config file created");
 }
 
-extern "C" void setup(CModInfo *info)
+MOD_EXTERN_FUNC void setup(CModInfo *info)
 {
     *info = modInfo.to_c();
 
@@ -556,7 +557,7 @@ extern "C" void setup(CModInfo *info)
     getLogger().info("Completed setup!");
 }
 
-extern "C" void load()
+MOD_EXTERN_FUNC void load()
 {
     getLogger().debug("Installing hooks...");
     il2cpp_functions::Init();
