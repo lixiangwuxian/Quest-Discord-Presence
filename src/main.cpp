@@ -6,6 +6,7 @@
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
 #include "beatsaber-hook/shared/utils/hooking.hpp"
+#include "custom-types/shared/delegate.hpp"
 
 #include "UnityEngine/Resources.hpp"
 
@@ -42,6 +43,7 @@ using namespace GlobalNamespace;
 #include <string>
 #include <optional>
 #include "presencemanager.hpp"
+#include <sstream> 
 
 // static ModInfo modInfo;
 static modloader::ModInfo modInfo{MOD_ID, VERSION, 0};
@@ -84,16 +86,28 @@ std::string difficultyToString(BeatmapDifficulty difficulty)
 MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView *self)
 {
     StandardLevelDetailView_RefreshContent(self);
-    // IPreviewBeatmapLevel *level = reinterpret_cast<IPreviewBeatmapLevel *>(self->level);
-    // if (!level)
-    // {
-    //     return;
-    // }
+    BeatmapLevel *level = self->____beatmapLevel;
+    if (!level)
+    {
+        return;
+    }
 
-    // // Check if the level is an instance of BeatmapLevelSO
-    // selectedLevel.name = to_utf8(csstrtostr(level->get_songName()));
-    // selectedLevel.levelAuthor = to_utf8(csstrtostr(level->get_levelAuthorName()));
-    // selectedLevel.songAuthor = to_utf8(csstrtostr(level->get_songAuthorName())); // todo
+    // Check if the level is an instance of BeatmapLevelSO
+    selectedLevel.name = std::string(level->songName);
+    std::stringstream ss;
+    for (size_t i = 0; i < level->allMappers.size(); ++i) {
+        // 将每个 ::StringW 转换为 std::string
+        std::string mapper = static_cast<std::string>(level->allMappers[i]);
+
+        ss << mapper;
+
+        // 如果不是最后一个元素，添加逗号
+        if (i != level->allMappers.size() - 1) {
+            ss << ",";
+        }
+    }
+    selectedLevel.levelAuthor = ss.str();  // 返回结果字符串
+    selectedLevel.songAuthor = std::string(level->songAuthorName);
 }
 
 static int currentFrame = -1;
@@ -125,7 +139,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
                 void,
                 MenuTransitionsHelper *self,
                 ::StringW gameMode, 
-                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,  // 确保使用 ByRef
+                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
                 ::GlobalNamespace::BeatmapLevel* beatmapLevel,   
                 ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData, 
                 ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
@@ -148,25 +162,25 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
 )
 {
     // 记录日志，标记歌曲开始
-    // getLogger().info("Song Started");
+    getLogger().info("Song Started");
 
     // 初始化当前帧数为 -1
-    // currentFrame = -1;
+    currentFrame = -1;
 
     // 从传递的 difficultyBeatmap 中获取难度
-    // BeatmapDifficulty difficulty = beatmapKey->get_difficulty();
-    // selectedLevel.selectedDifficulty = difficultyToString(difficulty); //todo
+    BeatmapDifficulty difficulty = beatmapKey->difficulty;
+    selectedLevel.selectedDifficulty = difficultyToString(difficulty); //todo
 
     // 设置当前正在播放的关卡信息
-    // presenceManager->statusLock.lock();
-    // presenceManager->playingLevel.emplace(selectedLevel);
-    // presenceManager->isPractice = practiceSettings != nullptr; // 如果 practiceSettings 不为空，则表示在练习模式
+    presenceManager->statusLock.lock();
+    presenceManager->playingLevel.emplace(selectedLevel);
+    presenceManager->isPractice = practiceSettings != nullptr; 
 
-    // if (presenceManager->isPractice)
-    // {
-    //     getLogger().info("Practice mode is enabled!");
-    // }
-    // presenceManager->statusLock.unlock(); // todo
+    if (presenceManager->isPractice)
+    {
+        getLogger().info("Practice mode is enabled!");
+    }
+    presenceManager->statusLock.unlock();
 
     // 调用原始的 StartStandardLevel 函数
     MenuTransitionsHelper_StartStandardLevel(
@@ -233,14 +247,14 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
 
     getLogger().info("Multiplayer Song Started");
 
-    // // 使用 beatmapKey 和 beatmapLevelData 来确定选中的难度
-    // BeatmapDifficulty difficulty = beatmapLevelData->get_difficulty(); 
-    // selectedLevel.selectedDifficulty = difficultyToString(difficulty);
+    // 使用 beatmapKey 和 beatmapLevelData 来确定选中的难度
+    BeatmapDifficulty difficulty = beatmapKey->difficulty;
+    selectedLevel.selectedDifficulty = difficultyToString(difficulty);
     
     // // 设置正在播放的关卡
-    // presenceManager->statusLock.lock();
-    // presenceManager->playingLevel.emplace(selectedLevel);
-    // presenceManager->statusLock.unlock(); // todo
+    presenceManager->statusLock.lock();
+    presenceManager->playingLevel.emplace(selectedLevel);
+    presenceManager->statusLock.unlock();
 
     // 调用原始函数
     MenuTransitionsHelper_StartMultiplayerLevel(
@@ -269,7 +283,7 @@ void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager *multiplaye
 }
 
 // Reset the lobby back to null when we leave back to the menu
-void onLobbyDisconnect()
+void onLobbyDisconnect(GlobalNamespace::DisconnectedReason reason)
 {
     getLogger().info("Left Multiplayer lobby");
     presenceManager->statusLock.lock();
@@ -281,34 +295,42 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
 {
     getLogger().info("Joined multiplayer lobby");
 
-    // // TODO avoid FindObjectsOfTypeAll calls if possible
-    // // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
+    // TODO avoid FindObjectsOfTypeAll calls if possible
+    // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
 
-    // // Used for updating current player count in the DidChange event
-    // LobbyPlayersDataModel *lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel *>(self->lobbyPlayersDataModel);
+    // Used for updating current player count in the DidChange event
+    LobbyPlayersDataModel *lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel *>(self->_lobbyPlayersDataModel);
 
-    // // Used for getting max player count
-    // // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
-    // IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->multiplayerSessionManager;
+    // Used for getting max player count
+    // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
+    IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->_multiplayerSessionManager;
 
-    // int maxPlayers = sessionManager->get_maxPlayerCount();
-    // int numActivePlayers = sessionManager->get_connectedPlayerCount();
+    int maxPlayers = sessionManager->get_maxPlayerCount();
+    int numActivePlayers = sessionManager->get_connectedPlayerCount();
 
-    // // Set the number of players in this lobby
-    // MultiplayerLobbyInfo lobbyInfo;
-    // lobbyInfo.numberOfPlayers = numActivePlayers + 1;
-    // lobbyInfo.maxPlayers = maxPlayers;
-    // presenceManager->statusLock.lock();
-    // presenceManager->multiplayerLobby.emplace(lobbyInfo);
-    // presenceManager->statusLock.unlock();
+    // Set the number of players in this lobby
+    MultiplayerLobbyInfo lobbyInfo;
+    lobbyInfo.numberOfPlayers = numActivePlayers + 1;
+    lobbyInfo.maxPlayers = maxPlayers;
+    presenceManager->statusLock.lock();
+    presenceManager->multiplayerLobby.emplace(lobbyInfo);
+    presenceManager->statusLock.unlock();
 
-    // // Used to update player count
-    // lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<::StringW> *>(classof(System::Action_1<::StringW> *), sessionManager, handleLobbyPlayersDataModelDidChange));
+    // 然后创建委托并添加到事件
+    lobbyPlayersDataModel->add_didChangeEvent(
+        custom_types::MakeDelegate<System::Action_1<StringW>*>(
+            std::function<void(StringW)>(std::bind(handleLobbyPlayersDataModelDidChange, sessionManager, std::placeholders::_1))
+        )
+    );
 
-    // // Register disconnect from lobby event
-    // sessionManager->add_disconnectedEvent(
-    //     il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(classof(System::Action_1<GlobalNamespace::DisconnectedReason> *), static_cast<Il2CppObject *>(nullptr), onLobbyDisconnect));
-    //todo
+
+
+    // Register disconnect from lobby event
+    sessionManager->add_disconnectedEvent(
+        custom_types::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(
+            std::function<void(GlobalNamespace::DisconnectedReason)>(std::bind(onLobbyDisconnect, std::placeholders::_1))
+        )
+    );
     GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
 

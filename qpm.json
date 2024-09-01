@@ -27,8 +27,13 @@
       "additionalData": {}
     },
     {
+      "id": "custom-types",
+      "versionRange": "^0.17.10",
+      "additionalData": {}
+    },
+    {
       "id": "bs-cordl",
-      "versionRange": "*",
+      "versionRange": "^3700.0.0",
       "additionalData": {}
     }
   ],

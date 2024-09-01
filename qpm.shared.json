@@ -35,36 +35,18 @@
         "additionalData": {}
       },
       {
+        "id": "custom-types",
+        "versionRange": "^0.17.10",
+        "additionalData": {}
+      },
+      {
         "id": "bs-cordl",
-        "versionRange": "*",
+        "versionRange": "^3700.0.0",
         "additionalData": {}
       }
     ]
   },
   "restoredDependencies": [
-    {
-      "dependency": {
-        "id": "bs-cordl",
-        "versionRange": "=3701.0.0",
-        "additionalData": {
-          "headersOnly": true,
-          "branchName": "version/v3701_0_0",
-          "compileOptions": {
-            "includePaths": [
-              "include"
-            ],
-            "cppFeatures": [],
-            "cppFlags": [
-              "-DNEED_UNSAFE_CSHARP",
-              "-fdeclspec",
-              "-DUNITY_2021",
-              "-DHAS_CODEGEN"
-            ]
-          }
-        }
-      },
-      "version": "3701.0.0"
-    },
     {
       "dependency": {
         "id": "paper",
@@ -95,6 +77,49 @@
         }
       },
       "version": "0.3.2"
+    },
+    {
+      "dependency": {
+        "id": "custom-types",
+        "versionRange": "=0.17.10",
+        "additionalData": {
+          "soLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.10/libcustom-types.so",
+          "debugSoLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.10/debug_libcustom-types.so",
+          "overrideSoName": "libcustom-types.so",
+          "modLink": "https://github.com/QuestPackageManager/Il2CppQuestTypePatching/releases/download/v0.17.10/CustomTypes.qmod",
+          "branchName": "version/v0_17_10",
+          "compileOptions": {
+            "cppFlags": [
+              "-Wno-invalid-offsetof"
+            ]
+          },
+          "cmake": true
+        }
+      },
+      "version": "0.17.10"
+    },
+    {
+      "dependency": {
+        "id": "bs-cordl",
+        "versionRange": "=3700.0.0",
+        "additionalData": {
+          "headersOnly": true,
+          "branchName": "version/v3700_0_0",
+          "compileOptions": {
+            "includePaths": [
+              "include"
+            ],
+            "cppFeatures": [],
+            "cppFlags": [
+              "-DNEED_UNSAFE_CSHARP",
+              "-fdeclspec",
+              "-DUNITY_2021",
+              "-DHAS_CODEGEN"
+            ]
+          }
+        }
+      },
+      "version": "3700.0.0"
     },
     {
       "dependency": {
