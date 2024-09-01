@@ -28,11 +28,11 @@ jobs:
               echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
               cat ${GITHUB_WORKSPACE}/ndkpath.txt
 
-         - name: Replace Missing libil2cpp 0.2.5 with 0.2.3
-           run: |
-              wget -O 1.zip "https://drive.usercontent.google.com/download?id=1TAeF5-sazUdXCeC9Z8ggs4UkWDc61wsD&export=download&authuser=0"
-              mkdir -p /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
-              unzip 1.zip -d /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
+         # - name: Replace Missing libil2cpp 0.2.5 with 0.2.3
+         #   run: |
+         #      wget -O 1.zip "https://drive.usercontent.google.com/download?id=1TAeF5-sazUdXCeC9Z8ggs4UkWDc61wsD&export=download&authuser=0"
+         #      mkdir -p /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
+         #      unzip 1.zip -d /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
 
          - name: QPM Dependencies Cache
            id: cache-qpm-deps

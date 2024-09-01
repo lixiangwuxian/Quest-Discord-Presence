@@ -5,7 +5,7 @@ set(MOD_VERSION "0.5.0")
 set(MOD_ID "discord-presence")
 
 # derived from override .so name or just id_version
-set(COMPILE_ID "discord-presence_0_5_0")
+set(COMPILE_ID "discord-presence")
 # derived from whichever codegen package is installed, will default to just codegen
 set(CODEGEN_ID "codegen")
 

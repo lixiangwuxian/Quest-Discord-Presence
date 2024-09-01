@@ -14,7 +14,6 @@
         "${binary}"
     ],
     "libraryFiles": [
-      "libbeatsaber-hook_3_14_0.so"
     ],
     "fileCopies": [
         {
