@@ -6,8 +6,6 @@ set(MOD_ID "discord-presence")
 
 # derived from override .so name or just id_version
 set(COMPILE_ID "discord-presence")
-# derived from whichever codegen package is installed, will default to just codegen
-set(CODEGEN_ID "codegen")
 
 # given from qpm, automatically updated from qpm.json
 set(EXTERN_DIR_NAME "extern")
