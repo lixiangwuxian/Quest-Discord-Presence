@@ -51,5 +51,5 @@ public:
     
     int timeLeft = 0; // The time when first going into the menu, or going into a multiplayer game. Or the time left if it's a song.
 
-    PresenceManager(Paper::LoggerContext& logger, const ConfigDocument& config);
+    PresenceManager(Paper::LoggerContext logger, const ConfigDocument& config);
 };
