@@ -79,7 +79,7 @@ jobs:
          - name: Get Library Name
            id: libname
            run: |
-              cd ./libs/arm64-v8a
+              cd ./build
               pattern="lib${module_id}*.so"
               files=( $pattern )
               echo ::set-output name=NAME::"${files[0]}"
@@ -88,7 +88,7 @@ jobs:
            uses: actions/upload-artifact@v2
            with:
               name: ${{ steps.libname.outputs.NAME }}
-              path: ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
+              path: ./build/${{ steps.libname.outputs.NAME }}
               if-no-files-found: error
 
          - name: Upload qmod artifact

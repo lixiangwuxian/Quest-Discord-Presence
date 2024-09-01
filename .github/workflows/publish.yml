@@ -108,7 +108,7 @@ jobs:
          - name: Get Library Name
            id: libname
            run: |
-              cd ./libs/arm64-v8a
+              cd ./build
               pattern="lib${module_id}*.so"
               files=( $pattern )
               echo ::set-output name=NAME::"${files[0]}"
@@ -120,4 +120,4 @@ jobs:
               body: "This is a release for the ${{ steps.get_tag_version.outputs.TAG }} version of the mod."
               files: |
                  ./${{ env.qmodName }}.qmod
-                 ./libs/arm64-v8a/${{ steps.libname.outputs.NAME }}
+                 ./build/${{ steps.libname.outputs.NAME }}
