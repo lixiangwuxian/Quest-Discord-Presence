@@ -1,0 +1,30 @@
+{
+    "standardLevelPresence": {
+        "details": "游玩中 {mapName} ({mapDifficulty})",
+        "state": "谱面作者: {mapAuthor} {paused?}"
+    },
+    "practicePresence": {
+        "details": "练习中 {mapName} ({mapDifficulty})",
+        "state": "谱面作者: {mapAuthor} {paused?}"
+    },
+    "multiplayerLevelPresence": {
+        "details": "联机游玩中 ({numPlayers}/{maxPlayers})",
+        "state": "{mapName} - {mapDifficulty} {paused?}"
+    },
+    "missionLevelPresence": {
+        "details": "生涯模式中",
+        "state": "{paused?}"
+    },
+    "tutorialPresence": {
+        "details": "教程模式中",
+        "state": "{paused?}"
+    },
+    "multiplayerLobbyPresence": {
+        "details": "联机-在房间中",
+        "state": "人数 ({numPlayers}/{maxPlayers})"
+    },
+    "menuPresence": {
+        "details": "主菜单",
+        "state": ""
+    }
+}

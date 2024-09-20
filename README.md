@@ -1,21 +1,18 @@
 # Discord Presence
 
-## Full 1.37 Support is WIP
+Now Support beatsaber 1.37 by lixiangwuxian
 
-<!-- Now Support beatsaber 1.37 by lixiangwuxian -->
-
-<!-- Everything should works fine, but if you encount any problems, please let me know in issue. -->
+Everything should works fine, but if you encount any problems, please let me know in issue.
 
 Allows you to see which song you're playing along with other info while playing beat saber on the Oculus Quest.
 
-Only lobby status works now.
+### features
 
-### todo
-
-- [ ] Singleplayer Mode Support
-- [ ] Multiplayer Mode Support
-- [ ] Campaign Mode Support
-- [ ] Song&Map Info Support
+- [x] Singleplayer Mode Support
+- [x] Pratice Mode Pratice
+- [x] Multiplayer Mode Support
+- [x] Campaign Mode Support
+- [x] Song&Map Info Support
 
 ## Installation
 
@@ -26,7 +23,7 @@ Only lobby status works now.
 
 You can download the mod for your BS version from the [releases page](https://github.com/lixiangwuxian/Quest-Discord-Presence/releases/latest)
 
-[Config File](https://github.com/lixiangwuxian/Quest-Discord-Presence/blob/master/default-config.json)
+[Config File](https://github.com/lixiangwuxian/Quest-Discord-Presence/blob/main/default-config.json)
 
 ## Credits
 
