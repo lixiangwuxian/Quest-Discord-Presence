@@ -162,7 +162,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
 
     // 从传递的 difficultyBeatmap 中获取难度
     BeatmapDifficulty difficulty = beatmapKey->difficulty;
-    selectedLevel.selectedDifficulty = difficultyToString(difficulty); //todo
+    selectedLevel.selectedDifficulty = difficultyToString(difficulty);
 
     // 设置当前正在播放的关卡信息
     presenceManager->statusLock.lock();
@@ -206,7 +206,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
                     void (MenuTransitionsHelper::*)
                     (
                         ::StringW,
-                        ByRef<::GlobalNamespace::BeatmapKey>, // 确保类型为 ByRef
+                        ByRef<::GlobalNamespace::BeatmapKey>,
                         ::GlobalNamespace::BeatmapLevel*,
                         ::GlobalNamespace::IBeatmapLevelData*,
                         ::GlobalNamespace::ColorScheme*,
@@ -223,7 +223,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
                 >(&MenuTransitionsHelper::StartMultiplayerLevel), void,
                 MenuTransitionsHelper *self,
                 ::StringW gameMode,
-                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,  // 确保使用 ByRef
+                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
                 ::GlobalNamespace::BeatmapLevel* beatmapLevel,
                 ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
                 ::GlobalNamespace::ColorScheme* overrideColorScheme,
@@ -253,7 +253,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
     MenuTransitionsHelper_StartMultiplayerLevel(
         self,
         gameMode,
-        beatmapKey,  // 使用 ByRef 参数
+        beatmapKey,
         beatmapLevel,
         beatmapLevelData,
         overrideColorScheme,
@@ -268,12 +268,12 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
         didDisconnectCallback);
 }
 
-void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager *multiplayerSessionManager, ::StringW userId)
+void handleLobbyPlayersDataModelDidChange(MultiplayerSessionManager *multiplayerSessionManager, ::StringW userId)
 {
     //todo
-    // presenceManager->statusLock.lock();
-    // presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->connectedPlayerCount + 1;
-    // presenceManager->statusLock.unlock();
+    presenceManager->statusLock.lock();
+    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->connectedPlayerCount + 1;
+    presenceManager->statusLock.unlock();
 }
 
 // Reset the lobby back to null when we leave back to the menu
@@ -298,33 +298,33 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
     // Used for getting max player count
     // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
     // todo
-    // IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->_multiplayerSessionManager;
+    MultiplayerSessionManager *sessionManager = reinterpret_cast<MultiplayerSessionManager *>(lobbyPlayersDataModel->_multiplayerSessionManager);
 
-    // int maxPlayers = sessionManager->maxPlayerCount;
-    // int numActivePlayers = sessionManager->connectedPlayerCount;
+    int maxPlayers = sessionManager->maxPlayerCount;
+    int numActivePlayers = sessionManager->connectedPlayerCount;
 
-    // // Set the number of players in this lobby
-    // MultiplayerLobbyInfo lobbyInfo;
-    // lobbyInfo.numberOfPlayers = numActivePlayers + 1;
-    // lobbyInfo.maxPlayers = maxPlayers;
-    // presenceManager->statusLock.lock();
-    // presenceManager->multiplayerLobby.emplace(lobbyInfo);
-    // presenceManager->statusLock.unlock();
+    // Set the number of players in this lobby
+    MultiplayerLobbyInfo lobbyInfo;
+    lobbyInfo.numberOfPlayers = numActivePlayers + 1;
+    lobbyInfo.maxPlayers = maxPlayers;
+    presenceManager->statusLock.lock();
+    presenceManager->multiplayerLobby.emplace(lobbyInfo);
+    presenceManager->statusLock.unlock();
 
-    // lobbyPlayersDataModel->add_didChangeEvent(
-    //     custom_types::MakeDelegate<System::Action_1<StringW>*>(
-    //         std::function<void(StringW)>(std::bind(handleLobbyPlayersDataModelDidChange, sessionManager, std::placeholders::_1))
-    //     )
-    // );
+    lobbyPlayersDataModel->add_didChangeEvent(
+        custom_types::MakeDelegate<System::Action_1<StringW>*>(
+            std::function<void(StringW)>(std::bind(handleLobbyPlayersDataModelDidChange, sessionManager, std::placeholders::_1))
+        )
+    );
 
 
 
     // Register disconnect from lobby event
-    // sessionManager->add_disconnectedEvent(
-    //     custom_types::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(
-    //         std::function<void(GlobalNamespace::DisconnectedReason)>(std::bind(onLobbyDisconnect, std::placeholders::_1))
-    //     )
-    // ); //todo
+    sessionManager->add_disconnectedEvent(
+        custom_types::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason> *>(
+            std::function<void(GlobalNamespace::DisconnectedReason)>(std::bind(onLobbyDisconnect, std::placeholders::_1))
+        )
+    ); //todo
     GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
 
@@ -539,11 +539,6 @@ void saveDefaultConfig()
 MOD_EXTERN_FUNC void setup(CModInfo *info)
 {
     *info = modInfo.to_c();
-
-    // info.id = ID;
-    // info.version = VERSION;
-    // modInfo = info;
-    // PaperLogger.info("Modloader name: %s", Modloader::getInfo().name.c_str());
     getConfig().Load();
     saveDefaultConfig(); // Create the default config file
     Paper::Logger::RegisterFileContextId(PaperLogger.tag);
@@ -556,7 +551,6 @@ MOD_EXTERN_FUNC void load()
     il2cpp_functions::Init();
 
     // Install our function hooks
-    // Logger &PaperLogger = PaperLogger;
     INSTALL_HOOK(PaperLogger, StandardLevelDetailView_RefreshContent);
     INSTALL_HOOK(PaperLogger, MenuTransitionsHelper_StartStandardLevel);
     INSTALL_HOOK(PaperLogger, StandardLevelGameplayManager_OnDestroy);
