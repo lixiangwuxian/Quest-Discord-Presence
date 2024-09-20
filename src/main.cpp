@@ -105,53 +105,49 @@ MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView
 
 static int currentFrame = -1;
 
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, 
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, // hook name
                 static_cast<void (MenuTransitionsHelper::*)(
                     ::StringW, 
-                    ByRef<::GlobalNamespace::BeatmapKey>,  // 确保使用 ByRef
-                    ::GlobalNamespace::BeatmapLevel*, 
-                    ::GlobalNamespace::IBeatmapLevelData*, 
-                    ::GlobalNamespace::OverrideEnvironmentSettings*, 
-                    ::GlobalNamespace::ColorScheme*, 
-                    ::GlobalNamespace::ColorScheme*, 
-                    ::GlobalNamespace::GameplayModifiers*, 
-                    ::GlobalNamespace::PlayerSpecificSettings*, 
-                    ::GlobalNamespace::PracticeSettings*, 
-                    ::GlobalNamespace::EnvironmentsListModel*, 
+                    ByRef<BeatmapKey>,  // 确保使用 ByRef
+                    BeatmapLevel*, 
+                    OverrideEnvironmentSettings*, 
+                    ColorScheme*, 
+                    ColorScheme*, 
+                    GameplayModifiers*, 
+                    PlayerSpecificSettings*, 
+                    PracticeSettings*, 
+                    EnvironmentsListModel*, 
                     ::StringW, 
                     bool, 
                     bool, 
                     System::Action*, 
                     System::Action_1<::Zenject::DiContainer*>*, 
-                    System::Action_2<::UnityW<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO>, 
-                                     ::GlobalNamespace::LevelCompletionResults*>*, 
-                    System::Action_2<::UnityW<::GlobalNamespace::LevelScenesTransitionSetupDataSO>, 
-                                     ::GlobalNamespace::LevelCompletionResults*>*, 
-                    System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData>
-                )>(&MenuTransitionsHelper::StartStandardLevel),
-                void,
+                    System::Action_2<::UnityW<StandardLevelScenesTransitionSetupDataSO>, 
+                                     LevelCompletionResults*>*, 
+                    System::Action_2<::UnityW<LevelScenesTransitionSetupDataSO>, 
+                                     LevelCompletionResults*>*, 
+                    System::Nullable_1<__RecordingToolManager__SetupData>
+                )>(&MenuTransitionsHelper::StartStandardLevel),//func signature
+                void,//func return
                 MenuTransitionsHelper *self,
                 ::StringW gameMode, 
-                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
-                ::GlobalNamespace::BeatmapLevel* beatmapLevel,   
-                ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData, 
-                ::GlobalNamespace::OverrideEnvironmentSettings* overrideEnvironmentSettings,
-                ::GlobalNamespace::ColorScheme* overrideColorScheme, 
-                ::GlobalNamespace::ColorScheme* beatmapOverrideColorScheme,
-                ::GlobalNamespace::GameplayModifiers* gameplayModifiers, 
-                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
-                ::GlobalNamespace::PracticeSettings* practiceSettings, 
-                ::GlobalNamespace::EnvironmentsListModel* environmentsListModel, 
+                ByRef<BeatmapKey> beatmapKey,
+                BeatmapLevel* beatmapLevel,  
+                OverrideEnvironmentSettings* overrideEnvironmentSettings,
+                ColorScheme* overrideColorScheme, 
+                ColorScheme* beatmapOverrideColorScheme,
+                GameplayModifiers* gameplayModifiers, 
+                PlayerSpecificSettings* playerSpecificSettings,
+                PracticeSettings* practiceSettings, 
+                EnvironmentsListModel* environmentsListModel, 
                 ::StringW backButtonText,
                 bool useTestNoteCutSoundEffects, 
                 bool startPaused, 
                 ::System::Action* beforeSceneSwitchCallback, 
                 ::System::Action_1<::Zenject::DiContainer*>* afterSceneSwitchCallback,
-                ::System::Action_2<::UnityW<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO>, 
-                ::GlobalNamespace::LevelCompletionResults*>* levelFinishedCallback,
-                ::System::Action_2<::UnityW<::GlobalNamespace::LevelScenesTransitionSetupDataSO>, 
-                ::GlobalNamespace::LevelCompletionResults*>* levelRestartedCallback,
-                ::System::Nullable_1<::GlobalNamespace::__RecordingToolManager__SetupData> recordingToolData
+                ::System::Action_2<::UnityW<StandardLevelScenesTransitionSetupDataSO>, LevelCompletionResults*>* levelFinishedCallback,
+                ::System::Action_2<::UnityW<LevelScenesTransitionSetupDataSO>, LevelCompletionResults*>* levelRestartedCallback,
+                ::System::Nullable_1<__RecordingToolManager__SetupData> recordingToolData
 )
 {
     // 记录日志，标记歌曲开始
@@ -179,9 +175,8 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
     MenuTransitionsHelper_StartStandardLevel(
         self,
         gameMode,
-        beatmapKey,  // 确保传递 ByRef 参数
+        beatmapKey,
         beatmapLevel,
-        beatmapLevelData,
         overrideEnvironmentSettings,
         overrideColorScheme,
         beatmapOverrideColorScheme,
@@ -201,41 +196,43 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
 }
 
 
+
+
 // Called when starting a multiplayer level
 MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
                     void (MenuTransitionsHelper::*)
                     (
                         ::StringW,
-                        ByRef<::GlobalNamespace::BeatmapKey>,
-                        ::GlobalNamespace::BeatmapLevel*,
-                        ::GlobalNamespace::IBeatmapLevelData*,
-                        ::GlobalNamespace::ColorScheme*,
-                        ::GlobalNamespace::GameplayModifiers*,
-                        ::GlobalNamespace::PlayerSpecificSettings*,
-                        ::GlobalNamespace::PracticeSettings*,
+                        ByRef<BeatmapKey>,
+                        BeatmapLevel*,
+                        IBeatmapLevelData*,
+                        ColorScheme*,
+                        GameplayModifiers*,
+                        PlayerSpecificSettings*,
+                        PracticeSettings*,
                         ::StringW,
                         bool,
                         ::System::Action*,
                         ::System::Action_1<::Zenject::DiContainer*>*,
-                        ::System::Action_2<::UnityW<::GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO>, ::GlobalNamespace::MultiplayerResultsData*>*,
-                        ::System::Action_1<::GlobalNamespace::DisconnectedReason>*
+                        ::System::Action_2<::UnityW<MultiplayerLevelScenesTransitionSetupDataSO>, MultiplayerResultsData*>*,
+                        ::System::Action_1<DisconnectedReason>*
                     )
                 >(&MenuTransitionsHelper::StartMultiplayerLevel), void,
                 MenuTransitionsHelper *self,
                 ::StringW gameMode,
-                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
-                ::GlobalNamespace::BeatmapLevel* beatmapLevel,
-                ::GlobalNamespace::IBeatmapLevelData* beatmapLevelData,
-                ::GlobalNamespace::ColorScheme* overrideColorScheme,
-                ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
-                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
-                ::GlobalNamespace::PracticeSettings* practiceSettings,
+                ByRef<BeatmapKey> beatmapKey,
+                BeatmapLevel* beatmapLevel,
+                IBeatmapLevelData* beatmapLevelData,
+                ColorScheme* overrideColorScheme,
+                GameplayModifiers* gameplayModifiers,
+                PlayerSpecificSettings* playerSpecificSettings,
+                PracticeSettings* practiceSettings,
                 ::StringW backButtonText,
                 bool useTestNoteCutSoundEffects,
                 ::System::Action* beforeSceneSwitchCallback,
                 ::System::Action_1<::Zenject::DiContainer*>* afterSceneSwitchCallback,
-                ::System::Action_2<::UnityW<::GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO>, ::GlobalNamespace::MultiplayerResultsData*>* levelFinishedCallback,
-                ::System::Action_1<::GlobalNamespace::DisconnectedReason>* didDisconnectCallback)
+                ::System::Action_2<::UnityW<MultiplayerLevelScenesTransitionSetupDataSO>, MultiplayerResultsData*>* levelFinishedCallback,
+                ::System::Action_1<DisconnectedReason>* didDisconnectCallback)
 {
 
     PaperLogger.info("Multiplayer Song Started");
@@ -373,33 +370,33 @@ MAKE_HOOK_MATCH(TutorialSongController_OnDestroy, &TutorialSongController::OnDes
 MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init, 
                 static_cast<void (MissionLevelScenesTransitionSetupDataSO::*)(
                     ::StringW, 
-                    ByRef<::GlobalNamespace::BeatmapKey>, 
-                    ::GlobalNamespace::BeatmapLevel*, 
-                    ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*>, 
-                    ::GlobalNamespace::ColorScheme*, 
-                    ::GlobalNamespace::GameplayModifiers*, 
-                    ::GlobalNamespace::PlayerSpecificSettings*, 
-                    ::GlobalNamespace::EnvironmentsListModel*, 
-                    ::GlobalNamespace::BeatmapLevelsModel*, 
-                    ::GlobalNamespace::AudioClipAsyncLoader*, 
+                    ByRef<BeatmapKey>, 
+                    BeatmapLevel*, 
+                    ::ArrayW<MissionObjective*, ::Array<MissionObjective*>*>, 
+                    ColorScheme*, 
+                    GameplayModifiers*, 
+                    PlayerSpecificSettings*, 
+                    EnvironmentsListModel*, 
+                    BeatmapLevelsModel*, 
+                    AudioClipAsyncLoader*, 
                     ::BeatSaber::PerformancePresets::PerformancePreset*, 
-                    ::GlobalNamespace::BeatmapDataLoader*, 
+                    BeatmapDataLoader*, 
                     ::StringW
                 )>(&MissionLevelScenesTransitionSetupDataSO::Init), 
                 void,
                 MissionLevelScenesTransitionSetupDataSO *self,
                 ::StringW missionId,
-                ByRef<::GlobalNamespace::BeatmapKey> beatmapKey,
-                ::GlobalNamespace::BeatmapLevel* beatmapLevel,
-                ::ArrayW<::GlobalNamespace::MissionObjective*, ::Array<::GlobalNamespace::MissionObjective*>*> missionObjectives,
-                ::GlobalNamespace::ColorScheme* overrideColorScheme,
-                ::GlobalNamespace::GameplayModifiers* gameplayModifiers,
-                ::GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
-                ::GlobalNamespace::EnvironmentsListModel* environmentsListModel,
-                ::GlobalNamespace::BeatmapLevelsModel* beatmapLevelsModel,
-                ::GlobalNamespace::AudioClipAsyncLoader* audioClipAsyncLoader,
+                ByRef<BeatmapKey> beatmapKey,
+                BeatmapLevel* beatmapLevel,
+                ::ArrayW<MissionObjective*, ::Array<MissionObjective*>*> missionObjectives,
+                ColorScheme* overrideColorScheme,
+                GameplayModifiers* gameplayModifiers,
+                PlayerSpecificSettings* playerSpecificSettings,
+                EnvironmentsListModel* environmentsListModel,
+                BeatmapLevelsModel* beatmapLevelsModel,
+                AudioClipAsyncLoader* audioClipAsyncLoader,
                 ::BeatSaber::PerformancePresets::PerformancePreset* performancePreset,
-                ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
+                BeatmapDataLoader* beatmapDataLoader,
                 ::StringW backButtonText)
 {
     PaperLogger.info("Campaign level starting");
