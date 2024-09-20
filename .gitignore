@@ -1,3 +1,5 @@
+.cache/
+
 # Prerequisites
 *.d
 
@@ -34,6 +36,10 @@
 # VSCode config stuff
 !.vscode/c_cpp_properties.json
 !.vscode/tasks.json
+!.vscode/settings.json
+
+# Jetbrains IDEs
+.idea/
 
 # NDK stuff
 out/
@@ -43,24 +49,21 @@ out/
 [Oo]bjs/
 ndkpath.txt
 *.zip
-
-# Codegen
-extern/codegen/
-
-# Adb Logcat files
-log.txt
+*.txt
 *.log
-
-# QPM Stuffs uncomment suggested by QPM
-# qpm.shared.json
-extern/
 Android.mk.backup
 
-# Build QMODS
+# QPM stuff
+[Ee]xtern/
 *.qmod
-
-# Mod Generated Stuff
 mod.json
+qpm_defines.cmake
+![Cc][Mm]ake[Ll]ists.txt
 
-# Build Path
-build/
+# CMake stuff
+[Bb]uild/
+cmake-build-*/
+extern.cmake
+
+# QMOD Schema
+mod.json.schema

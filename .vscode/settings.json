@@ -97,12 +97,12 @@
         "xstring": "cpp",
         "xlocale": "cpp",
         "xlocbuf": "cpp",
+        "concepts": "cpp",
+        "filesystem": "cpp",
+        "shared_mutex": "cpp",
+        "xfacet": "cpp",
         "xhash": "cpp",
         "xiosbase": "cpp",
-        "*.rh": "cpp",
-        "xutility": "cpp",
-        "concepts": "cpp",
-        "xfacet": "cpp",
         "xlocinfo": "cpp",
         "xlocmes": "cpp",
         "xlocmon": "cpp",
@@ -112,10 +112,6 @@
         "xstddef": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "ranges": "cpp",
-        "__verbose_abort": "cpp",
-        "execution": "cpp",
-        "print": "cpp",
-        "shared_mutex": "cpp"
+        "xutility": "cpp"
     }
 }

@@ -1,82 +1,28 @@
-// {
-//     "configurations": [
-//         {
-//             "defines": [
-//                 "MOD_ID=\"discord-presence\"",
-//                 "VERSION=\"0.3.5\"",
-//                 "__GNUC__",
-//                 "__aarch64__",
-//                 "ID=\"discord-presence\""
-//             ],
-//             "includePath": [
-//                 "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/libil2cpp",
-//                 "${workspaceFolder}/extern/includes/fmt/fmt/include",
-//                 "${workspaceFolder}/extern/includes",
-//                 "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include",
-//                 "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/**",
-//                 "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/windows-x86_64/lib/clang/18/include",
-//                 "K:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/include",
-//                 // "extern\includes\bs-cordl\include"
-//                 "${workspaceFolder}/extern/includes/bs-cordl/include",
-//                 // K:\Program Files\lldb-mingw\include
-//                 "K:/Program Files/lldb-mingw/include",
-//                 // K:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\ucrt\
-//                 "K:/Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/ucrt"
-//             ],
-//             "name": "Quest",
-//             "cStandard": "c11",
-//             "cppStandard": "c++20",
-//             "intelliSenseMode": "linux-clang-arm64"
-//         }
-//     ],
-//     "version": 4
-// }
 {
   "configurations": [
     {
       "defines": [
+        "MOD_ID=\"bsdc\"",
+        "VERSION=\"0.1.0\"",
         "__GNUC__",
         "__aarch64__"
       ],
       "includePath": [
-        "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/libil2cpp",
-        "${workspaceFolder}/extern/includes/codegen/include",
-        "${workspaceFolder}/extern/includes/fmt/fmt/include",
-        "${workspaceFolder}/extern/includes/bs-cordl/include",
-        "${workspaceFolder}/extern/includes",
-        "${workspaceFolder}/include",
-        "${workspaceFolder}/shared",
+        "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/libil2cpp", 
+        "${workspaceFolder}/extern/includes/codegen/include", 
+        "${workspaceFolder}/extern/includes", 
+        "${workspaceFolder}/include", 
+        "${workspaceFolder}/shared", 
         "${workspaceFolder}",
-        "${workspaceFolder}/**",
-        "${env:VCPKG_ROOT}/installed/arm64-android/include/**",
-        "${env:ANDROID_NDK_HOME}/sources/**",
-        "${env:ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include",
-        "${env:ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/**",
-        "${env:ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/windows-x86_64/lib/clang/18/include",
+        
+        "D:\android-ndk-r27/**",
         "${default}"
       ],
       "name": "Quest",
       "cStandard": "c11",
       "cppStandard": "c++20",
-      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
-      "intelliSenseMode": "clang-arm64"
-    },
-    {
-      "includePath": [
-        "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/libil2cpp",
-        "${workspaceFolder}/extern/includes/codegen/include",
-        "${workspaceFolder}/extern/includes",
-        "${workspaceFolder}/include",
-        "${workspaceFolder}/shared",
-        "${workspaceFolder}",
-        "${workspaceFolder}/**",
-        "${default}"
-      ],
-      "name": "Linux",
-      "cStandard": "c11",
-      "cppStandard": "c++20",
-      "intelliSenseMode": "linux-clang-x64",
-      "compileCommands": "${workspaceFolder}/build_linux/compile_commands.json",
+      "intelliSenseMode": "clang-x64",
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json"
     }
   ],
   "version": 4

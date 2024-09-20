@@ -43,26 +43,18 @@ using namespace GlobalNamespace;
 #include <optional>
 #include "presencemanager.hpp"
 #include <sstream> 
+#include "main.hpp"
 
 // static ModInfo modInfo;
 static modloader::ModInfo modInfo{MOD_ID, VERSION, 0};
-static Configuration &getConfig()
+Configuration &getConfig()
 {
     static Configuration config(modInfo);
     return config;
 }
 
-static Paper::LoggerContext PaparLogger= Paper::ConstLoggerContext("QuestDiscordPresence");
-static auto getLogger()
-{
-    return PaparLogger;
-}
 static PresenceManager *presenceManager = nullptr;
 static LevelInfo selectedLevel;
-
-#define MOD_EXPORT __attribute__((visibility("default")))
-#define MOD_EXTERN_FUNC extern "C" MOD_EXPORT
-
 
 // Converts the int representing an IBeatmapDifficulty into a string
 std::string difficultyToString(BeatmapDifficulty difficulty)
@@ -163,7 +155,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
 )
 {
     // 记录日志，标记歌曲开始
-    getLogger().info("Song Started");
+    PaperLogger.info("Song Started");
 
     // 初始化当前帧数为 -1
     currentFrame = -1;
@@ -179,7 +171,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel,
 
     if (presenceManager->isPractice)
     {
-        getLogger().info("Practice mode is enabled!");
+        PaperLogger.info("Practice mode is enabled!");
     }
     presenceManager->statusLock.unlock();
 
@@ -246,7 +238,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
                 ::System::Action_1<::GlobalNamespace::DisconnectedReason>* didDisconnectCallback)
 {
 
-    getLogger().info("Multiplayer Song Started");
+    PaperLogger.info("Multiplayer Song Started");
 
     // 使用 beatmapKey 和 beatmapLevelData 来确定选中的难度
     BeatmapDifficulty difficulty = beatmapKey->difficulty;
@@ -278,15 +270,16 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel, static_cast<
 
 void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager *multiplayerSessionManager, ::StringW userId)
 {
-    presenceManager->statusLock.lock();
-    // presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1; //todo
-    presenceManager->statusLock.unlock();
+    //todo
+    // presenceManager->statusLock.lock();
+    // presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->connectedPlayerCount + 1;
+    // presenceManager->statusLock.unlock();
 }
 
 // Reset the lobby back to null when we leave back to the menu
 void onLobbyDisconnect(GlobalNamespace::DisconnectedReason reason)
 {
-    getLogger().info("Left Multiplayer lobby");
+    PaperLogger.info("Left Multiplayer lobby");
     presenceManager->statusLock.lock();
     presenceManager->multiplayerLobby = std::nullopt;
     presenceManager->statusLock.unlock();
@@ -294,7 +287,7 @@ void onLobbyDisconnect(GlobalNamespace::DisconnectedReason reason)
 
 MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlowCoordinator::DidActivate, void, GameServerLobbyFlowCoordinator *self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)
 {
-    getLogger().info("Joined multiplayer lobby");
+    PaperLogger.info("Joined multiplayer lobby");
 
     // TODO avoid FindObjectsOfTypeAll calls if possible
     // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
@@ -304,25 +297,25 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
 
     // Used for getting max player count
     // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
-    IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->_multiplayerSessionManager;
+    // todo
+    // IMultiplayerSessionManager *sessionManager = lobbyPlayersDataModel->_multiplayerSessionManager;
 
-    // int maxPlayers = sessionManager->get_maxPlayerCount(); //todo
-    // int numActivePlayers = sessionManager->get_connectedPlayerCount(); //todo
+    // int maxPlayers = sessionManager->maxPlayerCount;
+    // int numActivePlayers = sessionManager->connectedPlayerCount;
 
-    // Set the number of players in this lobby
-    MultiplayerLobbyInfo lobbyInfo;
-    // lobbyInfo.numberOfPlayers = numActivePlayers + 1; //todo
-    // lobbyInfo.maxPlayers = maxPlayers; //todo
-    presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby.emplace(lobbyInfo);
-    presenceManager->statusLock.unlock();
+    // // Set the number of players in this lobby
+    // MultiplayerLobbyInfo lobbyInfo;
+    // lobbyInfo.numberOfPlayers = numActivePlayers + 1;
+    // lobbyInfo.maxPlayers = maxPlayers;
+    // presenceManager->statusLock.lock();
+    // presenceManager->multiplayerLobby.emplace(lobbyInfo);
+    // presenceManager->statusLock.unlock();
 
-    // 然后创建委托并添加到事件
-    lobbyPlayersDataModel->add_didChangeEvent(
-        custom_types::MakeDelegate<System::Action_1<StringW>*>(
-            std::function<void(StringW)>(std::bind(handleLobbyPlayersDataModelDidChange, sessionManager, std::placeholders::_1))
-        )
-    );
+    // lobbyPlayersDataModel->add_didChangeEvent(
+    //     custom_types::MakeDelegate<System::Action_1<StringW>*>(
+    //         std::function<void(StringW)>(std::bind(handleLobbyPlayersDataModelDidChange, sessionManager, std::placeholders::_1))
+    //     )
+    // );
 
 
 
@@ -338,7 +331,7 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
 // Called on standard level end
 MAKE_HOOK_MATCH(StandardLevelGameplayManager_OnDestroy, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager *self)
 {
-    getLogger().info("Song Ended");
+    PaperLogger.info("Song Ended");
     presenceManager->statusLock.lock();
     presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
     presenceManager->paused = false;              // If we are pasued, unpause us, since we are returning to the menu
@@ -349,7 +342,7 @@ MAKE_HOOK_MATCH(StandardLevelGameplayManager_OnDestroy, &StandardLevelGameplayMa
 // Called on multiplayer level end
 MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerGameplayManager_OnDisable, &MultiplayerLocalActivePlayerGameplayManager::OnDisable, void, MultiplayerLocalActivePlayerGameplayManager *self)
 {
-    getLogger().info("Multiplayer Song Ended");
+    PaperLogger.info("Multiplayer Song Ended");
     presenceManager->statusLock.lock();
     presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
     presenceManager->paused = false;              // If we are pasued, unpause us, since we are returning to the menu
@@ -360,7 +353,7 @@ MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerGameplayManager_OnDisable, &Multipla
 // Called on tutorial start
 MAKE_HOOK_MATCH(TutorialSongController_Awake, &TutorialSongController::Awake, void, TutorialSongController *self)
 {
-    getLogger().info("Tutorial starting");
+    PaperLogger.info("Tutorial starting");
     presenceManager->statusLock.lock();
     presenceManager->playingTutorial = true;
     presenceManager->statusLock.unlock();
@@ -369,7 +362,7 @@ MAKE_HOOK_MATCH(TutorialSongController_Awake, &TutorialSongController::Awake, vo
 
 MAKE_HOOK_MATCH(TutorialSongController_OnDestroy, &TutorialSongController::OnDestroy, void, TutorialSongController *self)
 {
-    getLogger().info("Tutorial ending");
+    PaperLogger.info("Tutorial ending");
     presenceManager->statusLock.lock();
     presenceManager->playingTutorial = false;
     presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
@@ -409,7 +402,7 @@ MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init,
                 ::GlobalNamespace::BeatmapDataLoader* beatmapDataLoader,
                 ::StringW backButtonText)
 {
-    getLogger().info("Campaign level starting");
+    PaperLogger.info("Campaign level starting");
 
     // 设置当前帧数为 -1
     currentFrame = -1;
@@ -442,7 +435,7 @@ MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init,
 // Called upon mission levels (campaign levels) ending.
 MAKE_HOOK_MATCH(MissionLevelGameplayManager_OnDestroy, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager *self)
 {
-    getLogger().info("Campaign level ending");
+    PaperLogger.info("Campaign level ending");
     presenceManager->statusLock.lock();
     presenceManager->playingCampaign = false;
     presenceManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
@@ -452,7 +445,7 @@ MAKE_HOOK_MATCH(MissionLevelGameplayManager_OnDestroy, &MissionLevelGameplayMana
 
 MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController *self)
 {
-    getLogger().info("Game paused");
+    PaperLogger.info("Game paused");
     presenceManager->statusLock.lock();
     presenceManager->paused = true;
     presenceManager->statusLock.unlock();
@@ -461,7 +454,7 @@ MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseContr
 
 MAKE_HOOK_MATCH(PauseController_HandlePauseMenuManagerDidPressContinueButton, &PauseController::HandlePauseMenuManagerDidPressContinueButton, void, PauseController *self)
 {
-    getLogger().info("Game resumed");
+    PaperLogger.info("Game resumed");
     presenceManager->statusLock.lock();
     presenceManager->paused = false;
     presenceManager->statusLock.unlock();
@@ -492,13 +485,13 @@ MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update
 
 void saveDefaultConfig()
 {
-    getLogger().info("Creating config file . . .");
+    PaperLogger.info("Creating config file . . .");
     ConfigDocument &config = getConfig().config;
     auto &alloc = config.GetAllocator();
     // If the config has already been created, don't overwrite it
     if (config.HasMember("multiplayerLevelPresence"))
     {
-        getLogger().info("Config file already exists");
+        PaperLogger.info("Config file already exists");
         return;
     }
     config.RemoveAllMembers();
@@ -540,7 +533,7 @@ void saveDefaultConfig()
     config.AddMember("menuPresence", menuPresence, alloc);
 
     getConfig().Write();
-    getLogger().info("Config file created");
+    PaperLogger.info("Config file created");
 }
 
 MOD_EXTERN_FUNC void setup(CModInfo *info)
@@ -550,34 +543,34 @@ MOD_EXTERN_FUNC void setup(CModInfo *info)
     // info.id = ID;
     // info.version = VERSION;
     // modInfo = info;
-    // getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
+    // PaperLogger.info("Modloader name: %s", Modloader::getInfo().name.c_str());
     getConfig().Load();
     saveDefaultConfig(); // Create the default config file
-    Paper::Logger::RegisterFileContextId(getLogger().tag);
-    getLogger().info("Completed setup!");
+    Paper::Logger::RegisterFileContextId(PaperLogger.tag);
+    PaperLogger.info("Completed setup!");
 }
 
 MOD_EXTERN_FUNC void load()
 {
-    getLogger().debug("Installing hooks...");
+    PaperLogger.debug("Installing hooks...");
     il2cpp_functions::Init();
 
     // Install our function hooks
-    // Logger &PaparLogger = getLogger();
-    INSTALL_HOOK(PaparLogger, StandardLevelDetailView_RefreshContent);
-    INSTALL_HOOK(PaparLogger, MenuTransitionsHelper_StartStandardLevel);
-    INSTALL_HOOK(PaparLogger, StandardLevelGameplayManager_OnDestroy);
-    INSTALL_HOOK(PaparLogger, MissionLevelScenesTransitionSetupDataSO_Init);
-    INSTALL_HOOK(PaparLogger, MissionLevelGameplayManager_OnDestroy);
-    INSTALL_HOOK(PaparLogger, TutorialSongController_Awake);
-    INSTALL_HOOK(PaparLogger, TutorialSongController_OnDestroy);
-    INSTALL_HOOK(PaparLogger, PauseController_Pause);
-    INSTALL_HOOK(PaparLogger, PauseController_HandlePauseMenuManagerDidPressContinueButton);
-    INSTALL_HOOK(PaparLogger, AudioTimeSyncController_Update);
-    INSTALL_HOOK(PaparLogger, MenuTransitionsHelper_StartMultiplayerLevel);
-    INSTALL_HOOK(PaparLogger, GameServerLobbyFlowCoordinator_DidActivate);
-    INSTALL_HOOK(PaparLogger, MultiplayerLocalActivePlayerGameplayManager_OnDisable);
+    // Logger &PaperLogger = PaperLogger;
+    INSTALL_HOOK(PaperLogger, StandardLevelDetailView_RefreshContent);
+    INSTALL_HOOK(PaperLogger, MenuTransitionsHelper_StartStandardLevel);
+    INSTALL_HOOK(PaperLogger, StandardLevelGameplayManager_OnDestroy);
+    INSTALL_HOOK(PaperLogger, MissionLevelScenesTransitionSetupDataSO_Init);
+    INSTALL_HOOK(PaperLogger, MissionLevelGameplayManager_OnDestroy);
+    INSTALL_HOOK(PaperLogger, TutorialSongController_Awake);
+    INSTALL_HOOK(PaperLogger, TutorialSongController_OnDestroy);
+    INSTALL_HOOK(PaperLogger, PauseController_Pause);
+    INSTALL_HOOK(PaperLogger, PauseController_HandlePauseMenuManagerDidPressContinueButton);
+    INSTALL_HOOK(PaperLogger, AudioTimeSyncController_Update);
+    INSTALL_HOOK(PaperLogger, MenuTransitionsHelper_StartMultiplayerLevel);
+    INSTALL_HOOK(PaperLogger, GameServerLobbyFlowCoordinator_DidActivate);
+    INSTALL_HOOK(PaperLogger, MultiplayerLocalActivePlayerGameplayManager_OnDisable);
 
-    getLogger().debug("Installed all hooks!");
-    presenceManager = new PresenceManager(getLogger(), getConfig().config);
+    PaperLogger.debug("Installed all hooks!");
+    presenceManager = new PresenceManager(PaperLogger, getConfig().config);
 }

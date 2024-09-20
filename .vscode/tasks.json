@@ -1,56 +1,120 @@
 {
     "version": "2.0.0",
+    "windows": {
+        "options": {
+            "shell": {
+                "executable": "pwsh.exe",
+                "args": [
+                    "-NoProfile",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-Command"
+                ]
+            }
+        }
+    },
+    "linux": {
+        "options": {
+            "shell": {
+                "executable": "/usr/bin/pwsh",
+                "args": [
+                    "-NoProfile",
+                    "-Command"
+                ]
+            }
+        }
+    },
+    "osx": {
+        "options": {
+            "shell": {
+                "executable": "/usr/local/bin/pwsh",
+                "args": [
+                    "-NoProfile",
+                    "-Command"
+                ]
+            }
+        }
+    },
     "tasks": [
         {
-            "label": "NDK Build",
-            "detail": "Builds the library using ndk-build.cmd",
+            "label": "Build",
+            "detail": "Builds the library",
             "type": "shell",
-            "command": "ndk-build",
-            "windows": {
-                "command": "ndk-build.cmd"
-            },
-            "args": ["NDK_PROJECT_PATH=.", "APP_BUILD_SCRIPT=./Android.mk", "NDK_APPLICATION_MK=./Application.mk"],
-            "group": "build"
-        },
-        {
-            "label": "Powershell Build",
-            "detail": "Builds the library using Powershell (recommended)",
-            "type": "shell",
-            "command": "./build.ps1",
-            "windows": {
-                "command": "./build.ps1"
-            },
+            "command": "./scripts/build.ps1",
             "group": {
                 "kind": "build",
                 "isDefault": true
+            },
+            "options": {
+                "env": {}
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build (Clean)",
+            "detail": "Builds the library from a clean state",
+            "type": "shell",
+            "command": "./scripts/build.ps1 -clean",
+            "group": "build",
+            "options": {
+                "env": {}
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Copy",
+            "detail": "Builds and copies the library to the Quest using ADB and force-quits Beat Saber",
+            "type": "shell",
+            "command": "./scripts/copy.ps1",
+            "group": "build",
+            "options": {
+                "env": {}
             }
         },
         {
-            "label": "Powershell Build and Copy",
-            "detail": "Builds and copies the library to the Quest using adb and force-quits Beat Saber",
+            "label": "Start Logging",
+            "detail": "Begin logging from the Quest to the console",
             "type": "shell",
-            "command": "./copy.ps1",
-            "windows": {
-                "command": "./copy.ps1"
-            },
-            "group": "build"
+            "command": "./scripts/start-logging.ps1",
         },
         {
-            "label": "QMOD Build",
-            "detail": "Builds a .qmod to be uploaded into BMBF or QuestPatcher",
+            "label": "Start logging to file",
+            "detail": "Begin logging from the Quest to the console and saving output to a file 'logcat.log'",
             "type": "shell",
-            "command": "./buildQMOD.ps1",
-            "windows": {
-                "command": "./buildQMOD.ps1"
-            },
+            "command": "./scripts/start-logging.ps1 --file",
+        },
+        {
+            "label": "Build QMOD",
+            "detail": "Builds a .qmod to be installed into BMBF or QuestPatcher",
+            "type": "shell",
+            "command": "./scripts/build.ps1 && ./scripts/createqmod.ps1",
             "args": [],
-            "group": "build"
+            "group": "build",
+            "options": {
+                "env": {}
+            },
+            "problemMatcher": []
         },
         {
-            "label": "Start logging",
-            "detail": "Records a log to log.txt using adb logcat",
+            "label": "Restart Beat Saber",
+            "detail": "Force-quits and restarts Beat Saber on the Quest",
             "type": "shell",
-            "command": "./startlogging.bat"
+            "command": "./scripts/restart-game.ps1",
+            "problemMatcher": []
+        },
+        {
+            "label": "Process Stack",
+            "detail": "Processes a tombstone using the debug .so to find file locations",
+            "type": "shell",
+            "command": "./scripts/ndk-stack.ps1",
+            "problemMatcher": []
+        },
+        {
+            "label": "Pull Tombstone",
+            "detail": "Finds and pulls the most recent tombstone from your quest",
+            "type": "shell",
+            "command": "./scripts/pull-tombstone.ps1",
+            "problemMatcher": []
         }
     ]
 }

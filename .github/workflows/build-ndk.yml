@@ -1,99 +1,120 @@
 name: NDK build
 
-env:
-   module_id: discord-presence
-   qmodName: discord-presence
-
 on:
-   push:
-      branches: [main]
-   pull_request:
-      branches: [main]
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - 'master'
+      - 'main'
+      - 'dev/*'
+      - 'feat/*'
+      - 'fix/*'
+    paths-ignore:
+      - '**.yml'
+      - '!.github/workflows/build-ndk.yml'
+      - '**.json'
+      - '!qpm.json'
+      - '!qpm.shared.json'
+      - '!mod.template.json'
+      - '**.txt'
+      - '!CMakeLists.txt'
+      - '**.ps1'
+      - '!build.ps1'
+      - '!createqmod.ps1'
+      - '**.md'
+      - '.gitignore'
+  pull_request:
+    branches:
+        - 'master'
+        - 'main'
+        - 'dev/*'
+        - 'feat/*'
+        - 'fix/*'
+
+env:
+    module_id: "bsdc"
+    qmod_name: "discord-presence"
 
 jobs:
-   build:
-      runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-      steps:
-         - uses: actions/checkout@v2
-           name: Checkout
-           with:
-              submodules: true
-              lfs: true
+    steps:
+    - uses: actions/checkout@v2
+      name: Checkout
+      with:
+        submodules: true
+        lfs: true
 
-         - uses: seanmiddleditch/gha-setup-ninja@v3
+    - uses: seanmiddleditch/gha-setup-ninja@v3
 
-         - name: Create ndkpath.txt
-           run: |
-              echo "$ANDROID_NDK_LATEST_HOME" > ${GITHUB_WORKSPACE}/ndkpath.txt
-              cat ${GITHUB_WORKSPACE}/ndkpath.txt
+    # Use canary NDK to avoid lesser known compile bugs
+    - name: Setup canary NDK
+      id: setup-ndk
+      uses: ./.github/actions/canary-ndk
 
-         # - name: Replace Missing libil2cpp 0.2.5 with 0.2.3
-         #   run: |
-         #      wget -O 1.zip "https://drive.usercontent.google.com/download?id=1TAeF5-sazUdXCeC9Z8ggs4UkWDc61wsD&export=download&authuser=0"
-         #      mkdir -p /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
-         #      unzip 1.zip -d /home/runner/.local/share/QPM-RS/cache/libil2cpp/0.2.5/src
+    - name: Create ndkpath.txt
+      run: |
+        echo ${{ steps.setup-ndk.outputs.ndk-path }} > ${GITHUB_WORKSPACE}/ndkpath.txt
+        cat ${GITHUB_WORKSPACE}/ndkpath.txt
 
-         - name: QPM Dependencies Cache
-           id: cache-qpm-deps
-           uses: actions/cache@v3
-           env:
-              cache-name: cache-qpm-deps
-           with:
-              path: /home/runner/.local/share/QPM-RS/cache
-              key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('qpm.json') }}
-              restore-keys: |
-                 ${{ runner.os }}-build-${{ env.cache-name }}-
-                 ${{ runner.os }}-build-
-                 ${{ runner.os }}-
-                     
-         - name: QPM Rust Action
-           uses: Fernthedev/qpm-action@main
-           with:
-              workflow_token: ${{secrets.GITHUB_TOKEN}}
+    # get version from pushed tag
+    - name: Extract version
+      if: startsWith(github.ref, 'refs/tags/v')
+      id: version
+      run: |
+        echo "TAG=${GITHUB_REF#refs/tags/}" >> ${GITHUB_OUTPUT}
+        echo "VERSION=${GITHUB_REF#refs/tags/v}" >> ${GITHUB_OUTPUT}
 
-              restore: true # will run restore on download
-              cache: true #will cache dependencies
+    - name: Setup qpm
+      uses: Fernthedev/qpm-action@main
+      with:
+        workflow_token: ${{ secrets.GITHUB_TOKEN }}
+        restore: true
+        cache: true
+        publish: false
 
-         - name: List Post Restore
-           run: |
-              echo includes:
-              ls -la ${GITHUB_WORKSPACE}/extern/includes
-              echo libs:
-              ls -la ${GITHUB_WORKSPACE}/extern/libs
-              echo cache:
-              ls -la $HOME/.local/share/QPM-RS/cache
-              echo qpm-cache:
-              qpm cache list
+    - name: Build & Create Qmod
+      run: |
+        cd ${GITHUB_WORKSPACE}
+        qpm s qmod
 
-         - name: Build
-           run: |
-              cd ${GITHUB_WORKSPACE}
-              pwsh -Command ./build.ps1
-            #   qpm qmod build
+    - name: Get Library Name
+      id: libname
+      run: |
+        cd ./build/
+        pattern="lib${module_id}*.so"
+        files=( $pattern )
+        echo "NAME=${files[0]}" >> ${GITHUB_OUTPUT}
 
-         - name: Create Qmod
-           run: |
-              pwsh -Command ./buildQMOD.ps1
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.libname.outputs.NAME }}
+        path: ./build/${{ steps.libname.outputs.NAME }}
+        if-no-files-found: error
 
-         - name: Get Library Name
-           id: libname
-           run: |
-              cd ./build
-              pattern="lib${module_id}*.so"
-              files=( $pattern )
-              echo ::set-output name=NAME::"${files[0]}"
+    - name: Upload qmod artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{env.qmod_name}}.qmod
+        path: ./${{ env.qmod_name }}.qmod
+        if-no-files-found: error
 
-         - name: Upload non-debug artifact
-           uses: actions/upload-artifact@v2
-           with:
-              name: ${{ steps.libname.outputs.NAME }}
-              path: ./build/${{ steps.libname.outputs.NAME }}
-              if-no-files-found: error
-
-         - name: Upload qmod artifact
-           uses: actions/upload-artifact@v2
-           with:
-              name: ${{env.qmodName}}.qmod
-              path: ./${{ env.qmodName }}.qmod
-              if-no-files-found: error
+    # if we had a tag, we should make a release
+    - name: Upload release artifacts
+      if: startsWith(github.ref, 'refs/tags/v')
+      id: upload_file_release
+      uses: softprops/action-gh-release@v0.1.15
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        draft: true
+        generate_release_notes: true
+        files: |
+          ./build/${{ steps.libname.outputs.NAME }}
+          ./build/debug_${{ steps.libname.outputs.NAME }}
+          ./${{ env.qmod_name }}.qmod
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

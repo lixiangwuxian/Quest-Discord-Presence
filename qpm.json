@@ -1,25 +1,64 @@
 {
+  "version": "0.5.0",
   "sharedDir": "shared",
   "dependenciesDir": "extern",
   "info": {
     "name": "discord-presence",
-    "id": "discord-presence",
-    "version": "0.4.0",
+    "id": "bsdc",
+    "version": "0.5.0",
     "url": null,
     "additionalData": {
-      "cmake":true
+      "overrideSoName": "libbsdc.so",
+      "cmake": true
     }
+  },
+  "workspace": {
+    "scripts": {
+      "build": [
+        "pwsh ./scripts/build.ps1"
+      ],
+      "clean": [
+        "pwsh ./scripts/build.ps1 -clean"
+      ],
+      "copy": [
+        "pwsh ./scripts/copy.ps1 $0:?"
+      ],
+      "logcat": [
+        "pwsh ./scripts/start-logging.ps1"
+      ],
+      "qmod": [
+        "pwsh ./scripts/build.ps1",
+        "pwsh ./scripts/createqmod.ps1"
+      ],
+      "restart": [
+        "pwsh ./scripts/restart-game.ps1"
+      ],
+      "stack": [
+        "pwsh ./scripts/ndk-stack.ps1"
+      ],
+      "tomb": [
+        "pwsh ./scripts/pull-tombstone.ps1"
+      ]
+    },
+    "qmodIncludeDirs": [
+      "./build",
+      "./extern/libs"
+    ],
+    "qmodIncludeFiles": [],
+    "qmodOutput": "./discord-presence.qmod"
   },
   "dependencies": [
     {
       "id": "beatsaber-hook",
-      "versionRange": "^5.1.6",
+      "versionRange": "^5.0.0",
       "additionalData": {}
     },
     {
       "id": "scotland2",
       "versionRange": "^0.1.4",
-      "additionalData": {}
+      "additionalData": {
+        "includeQmod": false
+      }
     },
     {
       "id": "paper",
@@ -27,15 +66,14 @@
       "additionalData": {}
     },
     {
-      "id": "custom-types",
-      "versionRange": "^0.17.10",
-      "additionalData": {}
-    },
-    {
       "id": "bs-cordl",
       "versionRange": "^3700.0.0",
       "additionalData": {}
+    },
+    {
+      "id": "custom-types",
+      "versionRange": "^0.17.10",
+      "additionalData": {}
     }
-  ],
-  "additionalData": {}
+  ]
 }

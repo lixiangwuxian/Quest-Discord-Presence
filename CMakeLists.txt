@@ -1,121 +1,75 @@
-# include some defines automatically made by qpm
-include(qpm_defines.cmake)
-
-# disable warning. Will commit later
-add_compile_options(-w)
-
-
 cmake_minimum_required(VERSION 3.22)
-project(${COMPILE_ID})
 
-set(CMAKE_TOOLCHAIN_FILE ${ANDROID_NDK}/build/cmake/android.toolchain.cmake)
+option(QUEST "Build for quest" ON)
 
-# 设置目标平台和ABI
-set(ANDROID_ABI arm64-v8a)
-set(ANDROID_PLATFORM android-21)
-
-# c++ standard
+# Globals
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-# define that stores the actual source directory
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-add_compile_definitions(MOD_ID=\"${MOD_ID}\")
-add_compile_definitions(USE_CODEGEN_FIELDS)
+add_compile_definitions(MOD_ID="${CMAKE_PROJECT_NAME}")
+add_compile_definitions(VERSION="${CMAKE_PROJECT_VERSION}")
 
-# compile options used
-add_compile_options(-frtti -fPIE -fPIC -fexceptions)
-add_compile_options(-O3)
-add_compile_options(-Wbitwise-op-parentheses)
-add_compile_options(-fdata-sections)
-add_compile_options(-ffunction-sections)
-add_compile_options(-fvisibility-inlines-hidden)
-add_compile_options(-fvisibility=hidden)
-add_compile_options(-DHAVE_NEON=1)
-add_compile_options(-Wno-inaccessible-base)
+add_compile_options(-frtti -fexceptions -fvisibility=hidden -fPIE -fPIC)
 
-# RELEASE FLAGS
-add_compile_options(-DNDEBUG)
+# Include. Include order matters!
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/utils.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/qpm.cmake)
 
-# compile definitions used
-add_compile_definitions(VERSION=\"${MOD_VERSION}\")
-add_compile_definitions(MOD_ID=\"${MOD_ID}\")
+if(${CMAKE_BUILD_TYPE} STREQUAL "RELEASE" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo" OR ${CMAKE_BUILD_TYPE} STREQUAL "MinSizeRel")
+        # Better optimizations
+        add_compile_options(-O3)
+
+        # LTO
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+        add_compile_options(-flto)
+endif()
+
+if(${CMAKE_BUILD_TYPE} STREQUAL "DEBUG" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+        add_compile_options(-g)
+endif()
+
+# Targets
+if(QUEST)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/targets/quest.cmake)
+endif()
+
+# Post build
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/strip.cmake)
+
+# stop symbols leaking
+# TODO: Fix
+# add_link_options(-Wl, --exclude-libs, ALL)
+project( bsdc
+        VERSION ${PACKAGE_VERSION})
+
+# Set COMPILE_ID for qpm purposes
+set(COMPILE_ID ${CMAKE_PROJECT_NAME})
 
 # recursively get all src files
 RECURSE_FILES(cpp_file_list ${SOURCE_DIR}/*.cpp)
 RECURSE_FILES(c_file_list ${SOURCE_DIR}/*.c)
 
-# add all src files to compile
 add_library(
-    ${COMPILE_ID}
-    SHARED
-    ${cpp_file_list}
-    ${c_file_list}
+        ${CMAKE_PROJECT_NAME}
+        SHARED
+        ${cpp_file_list}
+        ${c_file_list}
 )
 
-# add src dir as include dir
-target_include_directories(${COMPILE_ID} PRIVATE ${SOURCE_DIR})
+# for inline hook
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE -llog)
 
-# add include dir as include dir
-target_include_directories(${COMPILE_ID} PRIVATE ${INCLUDE_DIR})
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE ${SHARED_DIR})
 
-# add ndk include dir as include dir
-target_include_directories(${COMPILE_ID} SYSTEM PRIVATE ${CMAKE_ANDROID_NDK}/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include)
-target_include_directories(${COMPILE_ID} SYSTEM PRIVATE ${CMAKE_ANDROID_NDK}/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/c++/v1)
-# target_include_directories(${COMPILE_ID} SYSTEM PRIVATE C:/llvm-mingw-20240404-msvcrt-x86_64/include/c++/v1)
+# beatsaber hook inline hook
 
-# add shared dir as include dir
-target_include_directories(${COMPILE_ID} PUBLIC ${SHARED_DIR})
+RECURSE_FILES(src_inline_hook_beatsaber_hook_local_extra_c ${EXTERN_DIR}/includes/beatsaber-hook/shared/inline-hook/*.c)
+RECURSE_FILES(src_inline_hook_beatsaber_hook_local_extra_cpp ${EXTERN_DIR}/includes/beatsaber-hook/shared/inline-hook/*.cpp)
 
-# codegen includes
-target_include_directories(${COMPILE_ID} PRIVATE ${EXTERN_DIR}/includes/${CODEGEN_ID}/include)
-
-target_link_libraries(${COMPILE_ID} PRIVATE -llog -lz)
-
-# add extern stuff like libs and other includes
-include(extern.cmake)
-
-add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-    COMMAND ${CMAKE_STRIP} -g -S -d --strip-all
-    "lib${COMPILE_ID}.so" -o "stripped_lib${COMPILE_ID}.so"
-    COMMENT "Strip debug symbols done on final binary.")
-
-add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory debug
-    COMMENT "Make directory for debug symbols"
-)
-
-add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rename lib${COMPILE_ID}.so debug/lib${COMPILE_ID}.so
-    COMMENT "Rename the lib to debug_ since it has debug symbols"
-)
-
-add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rename stripped_lib${COMPILE_ID}.so lib${COMPILE_ID}.so
-    COMMENT "Rename the stripped lib to regular"
-)
-
-foreach(so_file ${so_list})
-    cmake_path(GET so_file FILENAME file)
-
-    add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${so_file} debug/${file}
-        COMMENT "Copy so files for ndk stack"
-    )
-
-    add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-        COMMAND ${CMAKE_STRIP} -g -S -d --strip-all ${so_file} -o ${file}
-        COMMENT "Strip debug symbols from the dependencies")
-endforeach()
-
-foreach(a_file ${a_list})
-    cmake_path(GET a_file FILENAME file)
-
-    add_custom_command(TARGET ${COMPILE_ID} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${a_file} debug/${file}
-        COMMENT "Copy a files for ndk stack")
-endforeach()
-
-include(assets_include.cmake)
+target_sources(${COMPILE_ID} PRIVATE ${src_inline_hook_beatsaber_hook_local_extra_c})
+target_sources(${COMPILE_ID} PRIVATE ${src_inline_hook_beatsaber_hook_local_extra_cpp})
