@@ -84,22 +84,16 @@ MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView
     {
         return;
     }
-
-    // Check if the level is an instance of BeatmapLevelSO
     selectedLevel.name = std::string(level->songName);
     std::stringstream ss;
     for (size_t i = 0; i < level->allMappers.size(); ++i) {
-        // 将每个 ::StringW 转换为 std::string
         std::string mapper = static_cast<std::string>(level->allMappers[i]);
-
         ss << mapper;
-
-        // 如果不是最后一个元素，添加逗号
         if (i != level->allMappers.size() - 1) {
             ss << ",";
         }
     }
-    selectedLevel.levelAuthor = ss.str();  // 返回结果字符串
+    selectedLevel.levelAuthor = ss.str();
     selectedLevel.songAuthor = std::string(level->songAuthorName);
 }
 
