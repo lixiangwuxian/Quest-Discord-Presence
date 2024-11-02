@@ -2,7 +2,7 @@
 
 Now Support beatsaber 1.37 by lixiangwuxian
 
-Everything should works fine, but if you encount any problems, please let me know in issue.
+Everything should work fine, but if you encount any problems, please let me know in issue.
 
 Allows you to see which song you're playing along with other info while playing beat saber on the Oculus Quest.
 
